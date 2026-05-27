@@ -1,0 +1,110 @@
+import { supabaseAdmin } from '@/lib/supabase/admin'
+
+function toDateStr(d) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
+export async function GET() {
+  // Semana actual (lunes → sábado)
+  const today = new Date()
+  const dow   = today.getDay()
+  const lunes = new Date(today)
+  lunes.setDate(today.getDate() - (dow === 0 ? 6 : dow - 1))
+  const sabado = new Date(lunes)
+  sabado.setDate(lunes.getDate() + 5)
+
+  // Primer día del mes
+  const inicioMes = new Date(today.getFullYear(), today.getMonth(), 1)
+
+  const semanaInicio = toDateStr(lunes)
+  const semanaFin    = toDateStr(sabado)
+  const mesInicio    = toDateStr(inicioMes)
+  const mesActual    = toDateStr(today)
+
+  const [
+    { data: alumnos },
+    { data: horarios },
+    { data: excepciones },
+    { data: asistencias },
+    { data: coaches },
+    { data: sesiones },
+    { data: alumnosNuevosMes },
+  ] = await Promise.all([
+    supabaseAdmin.from('alumnos').select('id, activo, plan, coach_id, created_at'),
+    supabaseAdmin.from('alumno_horarios').select('alumno_id').eq('activo', true),
+    supabaseAdmin.from('alumno_horarios_excepciones')
+      .select('cancelado, fecha_nueva')
+      .gte('fecha_original', semanaInicio)
+      .lte('fecha_original', semanaFin),
+    supabaseAdmin.from('asistencias')
+      .select('asistio')
+      .gte('fecha', semanaInicio)
+      .lte('fecha', semanaFin),
+    supabaseAdmin.from('profiles').select('id, nombre, color').in('rol', ['coach', 'admin']),
+    supabaseAdmin.from('sesiones_rutina')
+      .select('id')
+      .gte('fecha', semanaInicio)
+      .lte('fecha', semanaFin),
+    supabaseAdmin.from('alumnos')
+      .select('id')
+      .eq('activo', true)
+      .gte('created_at', mesInicio)
+      .lte('created_at', mesActual + 'T23:59:59'),
+  ])
+
+  const activos   = (alumnos || []).filter(a => a.activo)
+  const inactivos = (alumnos || []).filter(a => !a.activo)
+
+  // Ocupación: alumnos activos con al menos 1 horario asignado
+  const conHorario = new Set((horarios || []).map(h => h.alumno_id))
+  const alumnosConHorario = activos.filter(a => conHorario.has(a.id)).length
+
+  // Por plan
+  const PLANES = ['2x/sem', '3x/sem', 'Full', 'Personalizado']
+  const porPlan = {}
+  PLANES.forEach(p => { porPlan[p] = 0 })
+  activos.forEach(a => {
+    const plan = a.plan || 'Sin plan'
+    porPlan[plan] = (porPlan[plan] || 0) + 1
+  })
+
+  // Por coach
+  const porCoach = {}
+  activos.forEach(a => {
+    const key = a.coach_id || '__sin_coach__'
+    porCoach[key] = (porCoach[key] || 0) + 1
+  })
+  const porCoachArr = Object.entries(porCoach).map(([coachId, count]) => {
+    const coach = (coaches || []).find(c => c.id === coachId)
+    return { nombre: coach?.nombre || 'Sin coach', color: coach?.color ?? null, count }
+  }).sort((a, b) => b.count - a.count)
+
+  // Asistencia
+  const totalAsist  = (asistencias || []).length
+  const asistieron  = (asistencias || []).filter(a => a.asistio).length
+  const tasaAsist   = totalAsist > 0 ? Math.round(asistieron / totalAsist * 100) : null
+
+  // Excepciones
+  const cancelaciones   = (excepciones || []).filter(e => e.cancelado).length
+  const reagendamientos = (excepciones || []).filter(e => !e.cancelado && e.fecha_nueva).length
+
+  const CAPACIDAD_MAX = 100
+
+  return Response.json({
+    semana:      { inicio: semanaInicio, fin: semanaFin },
+    capacidadMax: CAPACIDAD_MAX,
+    alumnos: {
+      total:        (alumnos || []).length,
+      activos:      activos.length,
+      inactivos:    inactivos.length,
+      conHorario:   alumnosConHorario,
+      nuevosEsteMes: (alumnosNuevosMes || []).length,
+    },
+    asistencia:  { total: totalAsist, asistieron, tasa: tasaAsist },
+    excepciones: { cancelaciones, reagendamientos, total: cancelaciones + reagendamientos },
+    porPlan:     Object.entries(porPlan).map(([plan, count]) => ({ plan, count })),
+    porCoach:    porCoachArr,
+    sesionesRutina: (sesiones || []).length,
+    coaches:     (coaches || []).length,
+  })
+}
