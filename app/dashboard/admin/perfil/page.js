@@ -53,7 +53,7 @@ export default function AdminPerfilPage() {
     <div className="max-w-lg">
 
       {/* Avatar */}
-      <div className="bg-[#141414] border border-white/5 rounded-xl p-5 mb-4 flex items-center gap-4">
+      <div className="bg-surface border border-border rounded-xl p-5 mb-4 flex items-center gap-4">
         <div
           className="w-14 h-14 rounded-full flex items-center justify-center text-xl font-black"
           style={previewColor
@@ -64,14 +64,14 @@ export default function AdminPerfilPage() {
           {initials}
         </div>
         <div>
-          <div className="text-white font-bold text-base">{profile?.nombre}</div>
+          <div className="text-foreground font-bold text-base">{profile?.nombre}</div>
           <div className="text-zinc-500 text-sm">{profile?.email}</div>
           <div className="text-[10px] text-zinc-600 uppercase tracking-wider mt-0.5">Administrador</div>
         </div>
       </div>
 
       {/* Color del calendario */}
-      <div className="bg-[#141414] border border-white/5 rounded-xl p-5">
+      <div className="bg-surface border border-border rounded-xl p-5">
         <div className="text-xs text-zinc-500 uppercase tracking-widest mb-1">Color en el calendario</div>
         <p className="text-xs text-zinc-600 mb-4">
           Este color identifica tus clases en el calendario. Elige uno que no use ningún coach.
@@ -85,7 +85,7 @@ export default function AdminPerfilPage() {
               onClick={() => { setColor(idx); setOk(false) }}
               className={`w-10 h-10 rounded-full transition-all ${
                 color !== null && color !== undefined && Number(color) === idx
-                  ? 'ring-2 ring-white ring-offset-2 ring-offset-[#141414] scale-110'
+                  ? 'ring-2 ring-white ring-offset-2 ring-offset-surface scale-110'
                   : 'opacity-60 hover:opacity-100 hover:scale-105'
               }`}
               style={{ background: c.border }}

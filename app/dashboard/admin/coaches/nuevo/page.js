@@ -49,14 +49,14 @@ export default function NuevoCoach() {
   return (
     <div className="max-w-lg">
       <div className="flex items-center gap-4 mb-6">
-        <button onClick={() => router.back()} className="text-zinc-500 hover:text-white transition-colors text-sm">
+        <button onClick={() => router.back()} className="text-zinc-500 hover:text-foreground transition-colors text-sm">
           ← Volver
         </button>
-        <h2 className="text-white font-bold">Nuevo Coach</h2>
+        <h2 className="text-foreground font-bold">Nuevo Coach</h2>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="bg-[#141414] border border-white/5 rounded-xl p-5 space-y-4">
+        <div className="bg-surface border border-border rounded-xl p-5 space-y-4">
           <div className="text-xs text-zinc-500 uppercase tracking-widest mb-2">Datos del coach</div>
 
           {[
@@ -74,7 +74,7 @@ export default function NuevoCoach() {
                 value={form[f.field]}
                 onChange={e => set(f.field, e.target.value)}
                 required={f.required}
-                className="w-full bg-[#1c1c1c] border border-white/5 text-white rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-red-600 transition-colors"
+                className="w-full bg-raised border border-border text-foreground rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-red-600 transition-colors"
               />
             </div>
           ))}
@@ -92,7 +92,7 @@ export default function NuevoCoach() {
                   onClick={() => set('color', idx)}
                   className={`w-9 h-9 rounded-full transition-all ${
                     form.color !== null && form.color !== undefined && Number(form.color) === idx
-                      ? 'ring-2 ring-white ring-offset-2 ring-offset-[#141414] scale-110'
+                      ? 'ring-2 ring-white ring-offset-2 ring-offset-surface scale-110'
                       : 'hover:scale-105 opacity-60 hover:opacity-100'
                   }`}
                   style={{ background: c.border }}
@@ -113,7 +113,7 @@ export default function NuevoCoach() {
 
           <div className="bg-yellow-500/5 border border-yellow-500/20 rounded-lg p-3">
             <p className="text-xs text-yellow-500">
-              El coach recibirá acceso con este correo y contraseña. Se recomienda pedirle que la cambie al primer ingreso.
+              El coach recibir�� acceso con este correo y contraseña. Se recomienda pedirle que la cambie al primer ingreso.
             </p>
           </div>
         </div>
@@ -122,7 +122,7 @@ export default function NuevoCoach() {
 
         <div className="flex gap-3">
           <button type="button" onClick={() => router.back()}
-            className="px-6 py-2.5 rounded-lg border border-white/10 text-zinc-400 hover:text-white text-sm transition-colors">
+            className="px-6 py-2.5 rounded-lg border border-border-strong text-zinc-500 hover:text-foreground text-sm transition-colors">
             Cancelar
           </button>
           <button type="submit" disabled={loading}

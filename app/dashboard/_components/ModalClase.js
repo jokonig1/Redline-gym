@@ -1,25 +1,13 @@
 'use client'
 import { useState, useEffect } from 'react'
 
-/**
- * Modal que aparece al presionar una clase del día.
- * Permite marcar asistencia y registrar la rutina con pesos/reps.
- *
- * Props:
- *   slot     – { id, alumno: {id, nombre, plan}, tipo, hora }
- *   coachId  – ID del coach autenticado
- *   fecha    – 'YYYY-MM-DD' de la clase
- *   onClose  – función para cerrar
- */
 export default function ModalClase({ slot, coachId, fecha, onClose }) {
   const alumno = slot.alumno
 
-  // ── Asistencia ──────────────────────────────────────────────────────────────
-  const [asistio,          setAsistio]          = useState(null)   // true | false | null
+  const [asistio,          setAsistio]          = useState(null)
   const [asistenciaId,     setAsistenciaId]     = useState(null)
   const [guardandoAsist,   setGuardandoAsist]   = useState(false)
 
-  // ── Rutina ──────────────────────────────────────────────────────────────────
   const [rutinas,          setRutinas]          = useState([])
   const [rutinaActiva,     setRutinaActiva]     = useState(null)
   const [ultimaSesion,     setUltimaSesion]     = useState(null)
@@ -30,7 +18,6 @@ export default function ModalClase({ slot, coachId, fecha, onClose }) {
   const [savedRutina,      setSavedRutina]      = useState(false)
   const [errorRutina,      setErrorRutina]      = useState('')
 
-  // ── Cargar asistencia existente + rutinas del coach ─────────────────────────
   useEffect(() => {
     async function load() {
       const [asistRes, rutinasRes] = await Promise.all([
@@ -46,7 +33,6 @@ export default function ModalClase({ slot, coachId, fecha, onClose }) {
     load()
   }, [coachId, slot.id, fecha])
 
-  // ── Marcar asistencia ────────────────────────────────────────────────────────
   async function marcarAsistencia(valor) {
     setGuardandoAsist(true)
     setAsistio(valor)
@@ -66,7 +52,6 @@ export default function ModalClase({ slot, coachId, fecha, onClose }) {
     setGuardandoAsist(false)
   }
 
-  // ── Seleccionar rutina → cargar última sesión del alumno ─────────────────────
   async function seleccionarRutina(rutina) {
     setRutinaActiva(rutina)
     setLoadingRutina(true)
@@ -79,8 +64,6 @@ export default function ModalClase({ slot, coachId, fecha, onClose }) {
     const ultima = res.ok ? await res.json() : null
     setUltimaSesion(ultima)
 
-    // Construir ejercicios de hoy a partir de la plantilla
-    // Si hay sesión anterior, pre-cargar sus valores como punto de partida
     const ejerciciosBase = (rutina.ejercicios || []).map(ej => {
       const prevEj = ultima?.ejercicios?.find(e => e.nombre === ej.nombre)
       return {
@@ -94,7 +77,6 @@ export default function ModalClase({ slot, coachId, fecha, onClose }) {
     setLoadingRutina(false)
   }
 
-  // ── Editar series ────────────────────────────────────────────────────────────
   function setSerie(ejIdx, serieIdx, field, value) {
     setEjerciciosHoy(prev => prev.map((ej, i) => {
       if (i !== ejIdx) return ej
@@ -133,7 +115,6 @@ export default function ModalClase({ slot, coachId, fecha, onClose }) {
     setEjerciciosHoy(prev => [...prev, { nombre: '', series: [{ peso: '', reps: '' }] }])
   }
 
-  // ── Guardar sesión ──────────────────────────────────────────────────────────
   async function guardarSesion() {
     setGuardandoRutina(true)
     setErrorRutina('')
@@ -160,41 +141,37 @@ export default function ModalClase({ slot, coachId, fecha, onClose }) {
     setGuardandoRutina(false)
   }
 
-  // ── Helper: datos de sesión anterior para mostrar ────────────────────────────
   function prevSerie(ejNombre) {
     const prevEj = ultimaSesion?.ejercicios?.find(e => e.nombre === ejNombre)
     if (!prevEj?.series?.length) return null
     return prevEj.series
   }
 
-  // ── Render ──────────────────────────────────────────────────────────────────
   return (
     <div className="fixed inset-0 bg-black/80 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
-      <div className="bg-[#141414] border border-white/10 rounded-t-2xl sm:rounded-2xl w-full sm:max-w-lg shadow-2xl flex flex-col max-h-[92dvh] sm:max-h-[88dvh]">
+      <div className="bg-surface border border-border-strong rounded-t-2xl sm:rounded-2xl w-full sm:max-w-lg shadow-2xl flex flex-col max-h-[92dvh] sm:max-h-[88dvh]">
 
         {/* Header */}
-        <div className="flex items-start justify-between px-5 pt-5 pb-4 border-b border-white/5 shrink-0">
+        <div className="flex items-start justify-between px-5 pt-5 pb-4 border-b border-border shrink-0">
           <div>
-            <div className="text-base font-black text-white">{alumno?.nombre}</div>
+            <div className="text-base font-black text-foreground">{alumno?.nombre}</div>
             <div className="flex items-center gap-2 mt-0.5">
-              <span className="text-xs text-zinc-500">
-                {slot.hora?.slice(0, 5)}
-              </span>
-              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-white/5 text-zinc-400 font-medium">
+              <span className="text-xs text-zinc-500">{slot.hora?.slice(0, 5)}</span>
+              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-hover-md text-zinc-500 font-medium">
                 {slot.tipo === 'grupal' ? 'Grupal' : 'Personalizado'}
               </span>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="text-zinc-600 hover:text-white w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/5 transition-all"
+            className="text-zinc-600 hover:text-foreground w-8 h-8 flex items-center justify-center rounded-lg hover:bg-hover-md transition-all"
           >✕</button>
         </div>
 
         {/* Cuerpo con scroll */}
         <div className="overflow-y-auto flex-1 px-5 py-4 space-y-5">
 
-          {/* ── Asistencia ── */}
+          {/* Asistencia */}
           <div>
             <div className="text-[10px] text-zinc-500 uppercase tracking-widest mb-3">Asistencia</div>
             <div className="flex gap-2">
@@ -209,7 +186,7 @@ export default function ModalClase({ slot, coachId, fecha, onClose }) {
                   className={`flex-1 py-2.5 rounded-xl border text-sm font-bold transition-all disabled:opacity-50 ${
                     asistio === value
                       ? cls
-                      : 'border-white/10 text-zinc-500 hover:text-white hover:border-white/20'
+                      : 'border-border-strong text-zinc-500 hover:text-foreground hover:border-border-strong'
                   }`}
                 >
                   {label}
@@ -223,7 +200,7 @@ export default function ModalClase({ slot, coachId, fecha, onClose }) {
             )}
           </div>
 
-          {/* ── Rutina ── */}
+          {/* Rutina */}
           <div>
             <div className="text-[10px] text-zinc-500 uppercase tracking-widest mb-3">Rutina de hoy</div>
 
@@ -233,7 +210,6 @@ export default function ModalClase({ slot, coachId, fecha, onClose }) {
               </p>
             ) : (
               <>
-                {/* Selector de rutina */}
                 <div className="flex flex-wrap gap-2 mb-4">
                   {rutinas.map(r => (
                     <button
@@ -242,7 +218,7 @@ export default function ModalClase({ slot, coachId, fecha, onClose }) {
                       className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${
                         rutinaActiva?.id === r.id
                           ? 'bg-red-600/20 border-red-600/50 text-red-400'
-                          : 'border-white/10 text-zinc-400 hover:text-white hover:border-white/20'
+                          : 'border-border-strong text-zinc-500 hover:text-foreground hover:border-border-strong'
                       }`}
                     >
                       {r.nombre}
@@ -250,7 +226,6 @@ export default function ModalClase({ slot, coachId, fecha, onClose }) {
                   ))}
                 </div>
 
-                {/* Ejercicios */}
                 {loadingRutina && (
                   <div className="text-xs text-zinc-500 text-center py-4">Cargando sesión anterior…</div>
                 )}
@@ -258,11 +233,10 @@ export default function ModalClase({ slot, coachId, fecha, onClose }) {
                 {rutinaActiva && !loadingRutina && (
                   <div className="space-y-4">
 
-                    {/* Info sesión anterior */}
                     {ultimaSesion && (
                       <div className="text-[10px] text-zinc-600 text-center">
                         Última sesión:{' '}
-                        <span className="text-zinc-400">
+                        <span className="text-zinc-500">
                           {new Date(ultimaSesion.fecha + 'T12:00:00').toLocaleDateString('es-CL', {
                             day: 'numeric', month: 'short'
                           })}
@@ -270,34 +244,31 @@ export default function ModalClase({ slot, coachId, fecha, onClose }) {
                       </div>
                     )}
 
-                    {/* Ejercicios */}
                     {ejerciciosHoy.map((ej, ejIdx) => {
                       const prev = prevSerie(ej.nombre)
                       return (
-                        <div key={ejIdx} className="bg-[#1c1c1c] rounded-xl p-3">
-                          {/* Nombre editable + botón eliminar */}
+                        <div key={ejIdx} className="bg-raised rounded-xl p-3">
                           <div className="flex items-center gap-2 mb-2">
                             <input
                               type="text"
                               value={ej.nombre}
                               onChange={e => renombrarEjercicio(ejIdx, e.target.value)}
                               placeholder="Nombre del ejercicio"
-                              className="flex-1 bg-transparent text-sm font-bold text-white placeholder:text-zinc-600 focus:outline-none border-b border-transparent focus:border-white/20 pb-0.5 transition-colors"
+                              className="flex-1 bg-transparent text-sm font-bold text-foreground placeholder:text-zinc-600 focus:outline-none border-b border-transparent focus:border-border-strong pb-0.5 transition-colors"
                             />
                             <button
                               onClick={() => eliminarEjercicio(ejIdx)}
-                              className="text-zinc-700 hover:text-red-400 transition-colors w-6 h-6 flex items-center justify-center rounded shrink-0 hover:bg-red-900/20 text-xs"
+                              className="text-zinc-600 hover:text-red-400 transition-colors w-6 h-6 flex items-center justify-center rounded shrink-0 hover:bg-red-900/20 text-xs"
                               title="Eliminar ejercicio"
                             >✕</button>
                           </div>
 
-                          {/* Sesión anterior (referencia) */}
                           {prev && (
-                            <div className="mb-2 pb-2 border-b border-white/5">
+                            <div className="mb-2 pb-2 border-b border-border">
                               <div className="text-[9px] text-zinc-600 uppercase tracking-wider mb-1">Anterior</div>
                               <div className="flex flex-wrap gap-1.5">
                                 {prev.map((s, i) => (
-                                  <span key={i} className="text-[10px] text-zinc-500 bg-white/5 px-2 py-0.5 rounded">
+                                  <span key={i} className="text-[10px] text-zinc-500 bg-hover-md px-2 py-0.5 rounded">
                                     {s.peso ? `${s.peso} kg` : '—'} × {s.reps || '—'}
                                   </span>
                                 ))}
@@ -305,12 +276,11 @@ export default function ModalClase({ slot, coachId, fecha, onClose }) {
                             </div>
                           )}
 
-                          {/* Series de hoy */}
                           <div className="text-[9px] text-zinc-600 uppercase tracking-wider mb-2">Hoy</div>
                           <div className="space-y-1.5">
                             {ej.series.map((serie, serieIdx) => (
                               <div key={serieIdx} className="flex items-center gap-2">
-                                <span className="text-[10px] text-zinc-700 w-4 text-center">{serieIdx + 1}</span>
+                                <span className="text-[10px] text-zinc-600 w-4 text-center">{serieIdx + 1}</span>
                                 <div className="flex-1 grid grid-cols-2 gap-1.5">
                                   <div className="relative">
                                     <input
@@ -319,7 +289,7 @@ export default function ModalClase({ slot, coachId, fecha, onClose }) {
                                       placeholder="kg"
                                       value={serie.peso}
                                       onChange={e => setSerie(ejIdx, serieIdx, 'peso', e.target.value)}
-                                      className="w-full bg-[#242424] border border-white/5 text-white rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:border-red-600 transition-colors text-center"
+                                      className="w-full bg-input-bg border border-border text-foreground rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:border-red-600 transition-colors text-center"
                                     />
                                     <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] text-zinc-600">kg</span>
                                   </div>
@@ -330,14 +300,14 @@ export default function ModalClase({ slot, coachId, fecha, onClose }) {
                                       placeholder="reps"
                                       value={serie.reps}
                                       onChange={e => setSerie(ejIdx, serieIdx, 'reps', e.target.value)}
-                                      className="w-full bg-[#242424] border border-white/5 text-white rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:border-red-600 transition-colors text-center"
+                                      className="w-full bg-input-bg border border-border text-foreground rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:border-red-600 transition-colors text-center"
                                     />
                                     <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] text-zinc-600">reps</span>
                                   </div>
                                 </div>
                                 <button
                                   onClick={() => quitarSerie(ejIdx, serieIdx)}
-                                  className="text-zinc-700 hover:text-red-400 transition-colors w-5 h-5 flex items-center justify-center text-xs shrink-0"
+                                  className="text-zinc-600 hover:text-red-400 transition-colors w-5 h-5 flex items-center justify-center text-xs shrink-0"
                                 >✕</button>
                               </div>
                             ))}
@@ -353,15 +323,13 @@ export default function ModalClase({ slot, coachId, fecha, onClose }) {
                       )
                     })}
 
-                    {/* Agregar ejercicio */}
                     <button
                       onClick={agregarEjercicio}
-                      className="w-full border border-dashed border-white/10 text-zinc-600 hover:text-red-400 hover:border-red-900/40 text-xs py-2.5 rounded-xl transition-colors"
+                      className="w-full border border-dashed border-border-strong text-zinc-600 hover:text-red-400 hover:border-red-900/40 text-xs py-2.5 rounded-xl transition-colors"
                     >
                       + Agregar ejercicio
                     </button>
 
-                    {/* Notas */}
                     <div>
                       <label className="text-[10px] text-zinc-600 uppercase tracking-wider block mb-1.5">
                         Notas (opcional)
@@ -371,18 +339,16 @@ export default function ModalClase({ slot, coachId, fecha, onClose }) {
                         onChange={e => setNotas(e.target.value)}
                         rows={2}
                         placeholder="Observaciones de la sesión..."
-                        className="w-full bg-[#1c1c1c] border border-white/5 text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-red-600 resize-none transition-colors placeholder:text-zinc-700"
+                        className="w-full bg-raised border border-border text-foreground rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-red-600 resize-none transition-colors placeholder:text-zinc-600"
                       />
                     </div>
 
-                    {/* Error */}
                     {errorRutina && (
                       <p className="text-xs text-red-400 bg-red-900/20 border border-red-900/30 rounded-lg px-3 py-2">
                         {errorRutina}
                       </p>
                     )}
 
-                    {/* Guardado confirmación */}
                     {savedRutina && (
                       <p className="text-xs text-green-400 text-center font-medium">
                         ✓ Sesión guardada correctamente
@@ -396,10 +362,10 @@ export default function ModalClase({ slot, coachId, fecha, onClose }) {
         </div>
 
         {/* Footer fijo */}
-        <div className="px-5 pb-5 pt-3 border-t border-white/5 shrink-0 flex gap-2">
+        <div className="px-5 pb-5 pt-3 border-t border-border shrink-0 flex gap-2">
           <button
             onClick={onClose}
-            className="flex-1 border border-white/10 text-zinc-400 hover:text-white text-sm py-2.5 rounded-xl transition-all"
+            className="flex-1 border border-border-strong text-zinc-500 hover:text-foreground text-sm py-2.5 rounded-xl transition-all"
           >
             Cerrar
           </button>

@@ -5,15 +5,6 @@ import { createClient } from '@/lib/supabase/client'
 import LoadingSpinner from '@/app/dashboard/_components/LoadingSpinner'
 import StatusBadge from '@/app/dashboard/_components/StatusBadge'
 
-/**
- * Lista de alumnos compartida entre Admin y Coach.
- *
- * Props:
- *   coachIdFiltro  – si se pasa, muestra solo los alumnos de ese coach
- *   mostrarAgregar – muestra el botón "+ Nuevo alumno" (solo admin)
- *   rutaNuevo      – ruta del botón nuevo (default: admin)
- *   rutaVer        – función (alumnoId) => string con la ruta de detalle
- */
 export default function AlumnosList({
   coachIdFiltro = null,
   mostrarAgregar = false,
@@ -27,25 +18,23 @@ export default function AlumnosList({
   const [loading, setLoading]           = useState(true)
   const [busqueda, setBusqueda]         = useState('')
   const [filtroEstado, setFiltroEstado] = useState('todos')
+  const [filtroPlan,   setFiltroPlan]   = useState('todos')
+  const [filtroCoach,  setFiltroCoach]  = useState('todos')
 
-  // Menú 3 puntos
   const [menuAbierto, setMenuAbierto] = useState(null)
   const menuRef = useRef(null)
 
-  // Modal confirmación eliminar
   const [confirmEliminar, setConfirmEliminar] = useState(null)
   const [eliminando, setEliminando]           = useState(false)
   const [errorEliminar, setErrorEliminar]     = useState('')
 
-  // Modal editar
   const [modalEditar, setModalEditar]       = useState(null)
   const [formEditar, setFormEditar]         = useState({})
   const [horariosEditar, setHorariosEditar] = useState([])
   const [coaches, setCoaches]               = useState([])
   const [guardandoEdit, setGuardandoEdit]   = useState(false)
   const [errorEdit, setErrorEdit]           = useState('')
-
-  // ── Fetch ──────────────────────────────────────────────────────────────────
+  const [capWarning, setCapWarning]         = useState(null) // { items, onConfirmar }
 
   const fetchAlumnos = useCallback(async () => {
     let query = supabase
@@ -62,7 +51,15 @@ export default function AlumnosList({
 
   useEffect(() => { fetchAlumnos() }, [fetchAlumnos])
 
-  // Cerrar menú al hacer clic fuera
+  // Cargar coaches para el filtro de admin (también los usa el modal de edición)
+  useEffect(() => {
+    if (!coachIdFiltro) {
+      fetch('/api/coaches')
+        .then(r => r.ok ? r.json() : [])
+        .then(data => setCoaches(data))
+    }
+  }, [coachIdFiltro])
+
   useEffect(() => {
     function handleClick(e) {
       if (menuRef.current && !menuRef.current.contains(e.target)) setMenuAbierto(null)
@@ -70,8 +67,6 @@ export default function AlumnosList({
     document.addEventListener('mousedown', handleClick)
     return () => document.removeEventListener('mousedown', handleClick)
   }, [])
-
-  // ── Acciones ──────────────────────────────────────────────────────────────
 
   async function toggleActivo(alumno) {
     setMenuAbierto(null)
@@ -120,11 +115,26 @@ export default function AlumnosList({
     }).filter(Boolean))
   }
 
-  async function guardarEditar() {
+  async function checkCapacidadBloques(nuevosHorarios) {
+    if (!nuevosHorarios.length) return []
+    const items = []
+    for (const h of nuevosHorarios) {
+      const { data } = await supabase
+        .from('alumno_horarios')
+        .select('hora')
+        .eq('activo', true)
+        .eq('dia', h.dia)
+      const count = (data || []).filter(r => (r.hora || '').startsWith(h.hora)).length
+      if (count >= 16) items.push({ dia: h.dia, hora: h.hora.slice(0, 5), count })
+    }
+    return items
+  }
+
+  async function ejecutarGuardarEditar() {
+    setCapWarning(null)
     setGuardandoEdit(true)
     setErrorEdit('')
 
-    // 1. Guardar datos del alumno
     const { error: errAlumno } = await supabase
       .from('alumnos')
       .update({
@@ -149,7 +159,6 @@ export default function AlumnosList({
       return
     }
 
-    // 2–4. Eliminar, insertar y actualizar horarios en paralelo
     const aEliminar  = horariosEditar.filter(h => h._eliminar && h.id)
     const aNuevos    = horariosEditar.filter(h => h._nuevo && !h._eliminar && h.dia && h.hora)
     const aActualizar = horariosEditar.filter(h => !h._nuevo && !h._eliminar && h.id)
@@ -181,6 +190,16 @@ export default function AlumnosList({
     ))
     setGuardandoEdit(false)
     setModalEditar(null)
+  }
+
+  async function guardarEditar() {
+    const aNuevos = horariosEditar.filter(h => h._nuevo && !h._eliminar && h.dia && h.hora)
+    const bloquesSaturados = await checkCapacidadBloques(aNuevos)
+    if (bloquesSaturados.length > 0) {
+      setCapWarning({ items: bloquesSaturados, onConfirmar: ejecutarGuardarEditar })
+      return
+    }
+    await ejecutarGuardarEditar()
   }
 
   async function eliminarAlumno(alumno) {
@@ -216,8 +235,6 @@ export default function AlumnosList({
     setEliminando(false)
   }
 
-  // ── Filtros ───────────────────────────────────────────────────────────────
-
   const alumnosFiltrados = alumnos.filter(a => {
     const q = busqueda.toLowerCase()
     const matchBusqueda =
@@ -228,10 +245,10 @@ export default function AlumnosList({
       filtroEstado === 'todos'   ? true :
       filtroEstado === 'activos' ? a.activo :
       !a.activo
-    return matchBusqueda && matchEstado
+    const matchPlan  = filtroPlan  === 'todos' || a.plan  === filtroPlan
+    const matchCoach = filtroCoach === 'todos' || a.coach_id === filtroCoach
+    return matchBusqueda && matchEstado && matchPlan && matchCoach
   })
-
-  // ── Render ────────────────────────────────────────────────────────────────
 
   if (loading) return <LoadingSpinner />
 
@@ -260,30 +277,76 @@ export default function AlumnosList({
       </div>
 
       {/* Filtros */}
-      <div className="flex gap-3 mb-4">
+      <div className="space-y-2 mb-4">
+        {/* Búsqueda */}
         <input
           type="text"
           placeholder="Buscar por nombre, RUT o correo..."
           value={busqueda}
           onChange={e => setBusqueda(e.target.value)}
-          className="flex-1 bg-[#141414] border border-white/5 text-white rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-red-600 transition-colors placeholder:text-zinc-600"
+          className="w-full bg-surface border border-border text-foreground rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-red-600 transition-colors placeholder:text-zinc-600"
         />
-        <select
-          value={filtroEstado}
-          onChange={e => setFiltroEstado(e.target.value)}
-          className="bg-[#141414] border border-white/5 text-white rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-red-600 transition-colors"
-        >
-          <option value="todos">Todos</option>
-          <option value="activos">Activos</option>
-          <option value="inactivos">Inactivos</option>
-        </select>
+
+        {/* Selects en grilla — 2 cols en móvil */}
+        <div className={`grid gap-2 ${!coachIdFiltro ? 'grid-cols-2 sm:grid-cols-3' : 'grid-cols-2'}`}>
+          <select
+            value={filtroEstado}
+            onChange={e => setFiltroEstado(e.target.value)}
+            className="bg-surface border border-border text-foreground rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-600 transition-colors"
+          >
+            <option value="todos">Todos los estados</option>
+            <option value="activos">Activos</option>
+            <option value="inactivos">Inactivos</option>
+          </select>
+
+          <select
+            value={filtroPlan}
+            onChange={e => setFiltroPlan(e.target.value)}
+            className="bg-surface border border-border text-foreground rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-600 transition-colors"
+          >
+            <option value="todos">Todos los planes</option>
+            <option value="2x/sem">2x por semana</option>
+            <option value="3x/sem">3x por semana</option>
+            <option value="Full">Full (5x/sem)</option>
+            <option value="Personalizado">Personalizado</option>
+          </select>
+
+          {/* Filtro por coach — solo en vista admin */}
+          {!coachIdFiltro && (
+            <select
+              value={filtroCoach}
+              onChange={e => setFiltroCoach(e.target.value)}
+              className="col-span-2 sm:col-span-1 bg-surface border border-border text-foreground rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-600 transition-colors"
+            >
+              <option value="todos">Todos los coaches</option>
+              <option value="">Sin coach</option>
+              {coaches.map(c => (
+                <option key={c.id} value={c.id}>{c.nombre}</option>
+              ))}
+            </select>
+          )}
+        </div>
+
+        {/* Indicador de filtros activos */}
+        {(filtroEstado !== 'todos' || filtroPlan !== 'todos' || filtroCoach !== 'todos' || busqueda) && (
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] text-zinc-500">
+              {alumnosFiltrados.length} resultado{alumnosFiltrados.length !== 1 ? 's' : ''}
+            </span>
+            <button
+              onClick={() => { setBusqueda(''); setFiltroEstado('todos'); setFiltroPlan('todos'); setFiltroCoach('todos') }}
+              className="text-[11px] text-red-500 hover:text-red-400 transition-colors"
+            >
+              Limpiar filtros ✕
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Tabla */}
-      <div className="bg-[#141414] border border-white/5 rounded-xl">
+      <div className="bg-surface border border-border rounded-xl">
 
-        {/* Cabecera — solo desktop */}
-        <div className="hidden md:flex items-center gap-4 px-5 py-3 border-b border-white/5">
+        <div className="hidden md:flex items-center gap-4 px-5 py-3 border-b border-border">
           <div className="flex-1 text-[10px] text-zinc-500 uppercase tracking-widest">Nombre</div>
           <div className="w-28 shrink-0 text-[10px] text-zinc-500 uppercase tracking-widest">RUT</div>
           <div className="w-24 shrink-0 text-[10px] text-zinc-500 uppercase tracking-widest">Plan</div>
@@ -300,17 +363,15 @@ export default function AlumnosList({
           alumnosFiltrados.map((alumno, idx) => (
             <div
               key={alumno.id}
-              className={`flex items-center gap-3 md:gap-4 px-4 md:px-5 py-3.5 md:py-4 border-b border-white/5 hover:bg-white/2 transition-colors
+              className={`flex items-center gap-3 md:gap-4 px-4 md:px-5 py-3.5 md:py-4 border-b border-border hover:bg-hover transition-colors
                 ${idx === alumnosFiltrados.length - 1 ? 'rounded-b-xl border-b-0' : ''}`}
             >
-              {/* Avatar + nombre (siempre visible) */}
               <div className="flex items-center gap-3 flex-1 min-w-0">
                 <div className="w-8 h-8 rounded-full bg-red-900/30 flex items-center justify-center text-xs font-bold text-red-400 shrink-0">
                   {alumno.nombre?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
                 </div>
                 <div className="min-w-0">
-                  <div className="text-sm font-medium text-white truncate">{alumno.nombre}</div>
-                  {/* Desktop: email | Mobile: plan + coach */}
+                  <div className="text-sm font-medium text-foreground truncate">{alumno.nombre}</div>
                   <div className="text-xs text-zinc-500 truncate">
                     <span className="hidden md:inline">{alumno.email}</span>
                     <span className="md:hidden">
@@ -320,39 +381,34 @@ export default function AlumnosList({
                 </div>
               </div>
 
-              {/* RUT — solo desktop */}
-              <div className="hidden md:block w-28 shrink-0 text-sm text-zinc-400">{alumno.rut || '—'}</div>
-              {/* Plan — solo desktop */}
-              <div className="hidden md:block w-24 shrink-0 text-sm text-zinc-400">{alumno.plan}</div>
-              {/* Coach — solo desktop */}
-              <div className="hidden md:block w-28 shrink-0 text-sm text-zinc-400">{alumno.coach?.nombre || '—'}</div>
+              <div className="hidden md:block w-28 shrink-0 text-sm text-zinc-500">{alumno.rut || '—'}</div>
+              <div className="hidden md:block w-24 shrink-0 text-sm text-zinc-500">{alumno.plan}</div>
+              <div className="hidden md:block w-28 shrink-0 text-sm text-zinc-500">{alumno.coach?.nombre || '—'}</div>
 
-              {/* Estado — siempre visible */}
               <div className="shrink-0 w-20 flex justify-end md:justify-start">
                 <StatusBadge activo={alumno.activo} />
               </div>
 
-              {/* Menú 3 puntos */}
               <div className="relative shrink-0 w-8" ref={menuAbierto === alumno.id ? menuRef : null}>
                 <button
                   onClick={() => setMenuAbierto(prev => prev === alumno.id ? null : alumno.id)}
-                  className="w-8 h-8 flex items-center justify-center rounded-lg text-zinc-500 hover:text-white hover:bg-white/5 transition-all text-lg leading-none"
+                  className="w-8 h-8 flex items-center justify-center rounded-lg text-zinc-500 hover:text-foreground hover:bg-hover-md transition-all text-lg leading-none"
                   title="Opciones"
                 >
                   ···
                 </button>
 
                 {menuAbierto === alumno.id && (
-                  <div className="absolute right-0 top-9 z-20 bg-[#1c1c1c] border border-white/10 rounded-xl shadow-2xl shadow-black/50 py-1.5 w-44 overflow-hidden">
+                  <div className="absolute right-0 top-9 z-20 bg-raised border border-border-strong rounded-xl shadow-2xl shadow-black/20 py-1.5 w-44 overflow-hidden">
                     <button
                       onClick={() => { setMenuAbierto(null); router.push(rutaVer(alumno.id)) }}
-                      className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-zinc-300 hover:text-white hover:bg-white/5 transition-colors text-left"
+                      className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-foreground-2 hover:text-foreground hover:bg-hover-md transition-colors text-left"
                     >
                       <span className="text-base">◉</span> Ver perfil
                     </button>
                     <button
                       onClick={() => { setMenuAbierto(null); abrirEditar(alumno) }}
-                      className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-zinc-300 hover:text-white hover:bg-white/5 transition-colors text-left"
+                      className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-foreground-2 hover:text-foreground hover:bg-hover-md transition-colors text-left"
                     >
                       <span className="text-base">✎</span> Editar
                     </button>
@@ -360,14 +416,14 @@ export default function AlumnosList({
                       onClick={() => toggleActivo(alumno)}
                       className={`w-full flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors text-left ${
                         alumno.activo
-                          ? 'text-zinc-400 hover:text-white hover:bg-white/5'
+                          ? 'text-zinc-500 hover:text-foreground hover:bg-hover-md'
                           : 'text-green-400 hover:text-green-300 hover:bg-green-900/20'
                       }`}
                     >
                       <span className="text-base">{alumno.activo ? '○' : '●'}</span>
                       {alumno.activo ? 'Desactivar' : 'Activar'}
                     </button>
-                    <div className="h-px bg-white/5 my-1" />
+                    <div className="h-px bg-border my-1" />
                     <button
                       onClick={() => { setMenuAbierto(null); setConfirmEliminar(alumno) }}
                       className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-red-500 hover:text-red-400 hover:bg-red-900/20 transition-colors text-left"
@@ -385,13 +441,13 @@ export default function AlumnosList({
       {/* Modal confirmación eliminar */}
       {confirmEliminar && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-          <div className="bg-[#141414] border border-white/10 rounded-2xl p-6 w-full max-w-sm shadow-2xl">
+          <div className="bg-surface border border-border-strong rounded-2xl p-6 w-full max-w-sm shadow-2xl">
             <div className="w-12 h-12 rounded-full bg-red-900/30 flex items-center justify-center mx-auto mb-4">
               <span className="text-red-500 text-xl">✕</span>
             </div>
-            <h3 className="text-white font-bold text-base text-center mb-1">¿Eliminar alumno?</h3>
+            <h3 className="text-foreground font-bold text-base text-center mb-1">¿Eliminar alumno?</h3>
             <p className="text-sm text-zinc-500 text-center mb-1">
-              <span className="text-white font-medium">{confirmEliminar.nombre}</span>
+              <span className="text-foreground font-medium">{confirmEliminar.nombre}</span>
             </p>
             <p className="text-xs text-zinc-600 text-center mb-5">
               Se eliminarán también sus horarios y excepciones registradas.
@@ -411,7 +467,7 @@ export default function AlumnosList({
               <button
                 onClick={() => { setConfirmEliminar(null); setErrorEliminar('') }}
                 disabled={eliminando}
-                className="flex-1 border border-white/10 text-zinc-400 hover:text-white text-sm py-2.5 rounded-xl transition-all disabled:opacity-50"
+                className="flex-1 border border-border-strong text-zinc-500 hover:text-foreground text-sm py-2.5 rounded-xl transition-all disabled:opacity-50"
               >
                 Cancelar
               </button>
@@ -430,20 +486,19 @@ export default function AlumnosList({
       {/* Modal editar alumno */}
       {modalEditar && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 overflow-y-auto">
-          <div className="bg-[#141414] border border-white/10 rounded-2xl w-full max-w-xl shadow-2xl my-4">
+          <div className="bg-surface border border-border-strong rounded-2xl w-full max-w-xl shadow-2xl my-4">
 
-            <div className="flex items-center justify-between px-6 py-4 border-b border-white/5">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-border">
               <div>
-                <h3 className="text-white font-bold">Editar alumno</h3>
+                <h3 className="text-foreground font-bold">Editar alumno</h3>
                 <p className="text-xs text-zinc-500 mt-0.5">{modalEditar.nombre}</p>
               </div>
               <button onClick={() => setModalEditar(null)}
-                className="text-zinc-600 hover:text-white w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/5 transition-all">✕</button>
+                className="text-zinc-600 hover:text-foreground w-8 h-8 flex items-center justify-center rounded-lg hover:bg-hover-md transition-all">✕</button>
             </div>
 
             <div className="px-6 py-5 space-y-5">
 
-              {/* Datos personales */}
               <div>
                 <div className="text-[10px] text-zinc-500 uppercase tracking-widest mb-3">Datos personales</div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -461,14 +516,13 @@ export default function AlumnosList({
                         type={type}
                         value={formEditar[field] || ''}
                         onChange={e => setFormEditar(f => ({ ...f, [field]: e.target.value }))}
-                        className="w-full bg-[#1c1c1c] border border-white/5 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-600 transition-colors"
+                        className="w-full bg-raised border border-border text-foreground rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-600 transition-colors"
                       />
                     </div>
                   ))}
                 </div>
               </div>
 
-              {/* Contacto emergencia */}
               <div>
                 <div className="text-[10px] text-zinc-500 uppercase tracking-widest mb-3">Contacto de emergencia</div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -481,14 +535,13 @@ export default function AlumnosList({
                       <input
                         value={formEditar[field] || ''}
                         onChange={e => setFormEditar(f => ({ ...f, [field]: e.target.value }))}
-                        className="w-full bg-[#1c1c1c] border border-white/5 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-600 transition-colors"
+                        className="w-full bg-raised border border-border text-foreground rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-600 transition-colors"
                       />
                     </div>
                   ))}
                 </div>
               </div>
 
-              {/* Info gimnasio */}
               <div>
                 <div className="text-[10px] text-zinc-500 uppercase tracking-widest mb-3">Información del gimnasio</div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
@@ -497,7 +550,7 @@ export default function AlumnosList({
                     <select
                       value={formEditar.plan || ''}
                       onChange={e => setFormEditar(f => ({ ...f, plan: e.target.value }))}
-                      className="w-full bg-[#1c1c1c] border border-white/5 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-600"
+                      className="w-full bg-raised border border-border text-foreground rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-600"
                     >
                       <option value="2x/sem">2x por semana</option>
                       <option value="3x/sem">3x por semana</option>
@@ -510,7 +563,7 @@ export default function AlumnosList({
                     <select
                       value={formEditar.coach_id || ''}
                       onChange={e => setFormEditar(f => ({ ...f, coach_id: e.target.value }))}
-                      className="w-full bg-[#1c1c1c] border border-white/5 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-600"
+                      className="w-full bg-raised border border-border text-foreground rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-600"
                     >
                       <option value="">Sin asignar</option>
                       {coaches.map(c => <option key={c.id} value={c.id}>{c.nombre}</option>)}
@@ -518,91 +571,78 @@ export default function AlumnosList({
                   </div>
                 </div>
                 <div className="space-y-3">
-                  <div>
-                    <label className="text-[10px] text-zinc-600 uppercase tracking-wider block mb-1">Objetivos</label>
-                    <textarea
-                      value={formEditar.objetivos || ''}
-                      onChange={e => setFormEditar(f => ({ ...f, objetivos: e.target.value }))}
-                      rows={2}
-                      className="w-full bg-[#1c1c1c] border border-white/5 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-600 resize-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-[10px] text-zinc-600 uppercase tracking-wider block mb-1">Restricciones médicas</label>
-                    <textarea
-                      value={formEditar.restricciones_medicas || ''}
-                      onChange={e => setFormEditar(f => ({ ...f, restricciones_medicas: e.target.value }))}
-                      rows={2}
-                      className="w-full bg-[#1c1c1c] border border-white/5 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-600 resize-none"
-                    />
-                  </div>
+                  {['objetivos', 'restricciones_medicas'].map(field => (
+                    <div key={field}>
+                      <label className="text-[10px] text-zinc-600 uppercase tracking-wider block mb-1">
+                        {field === 'objetivos' ? 'Objetivos' : 'Restricciones médicas'}
+                      </label>
+                      <textarea
+                        value={formEditar[field] || ''}
+                        onChange={e => setFormEditar(f => ({ ...f, [field]: e.target.value }))}
+                        rows={2}
+                        className="w-full bg-raised border border-border text-foreground rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-600 resize-none"
+                      />
+                    </div>
+                  ))}
                 </div>
               </div>
 
-              {/* Horarios */}
               <div>
                 <div className="flex items-center justify-between mb-3">
                   <div className="text-[10px] text-zinc-500 uppercase tracking-widest">Horario semanal fijo</div>
-                  <button
-                    type="button"
-                    onClick={agregarHorario}
-                    className="text-xs text-red-500 hover:text-red-400 transition-colors font-medium"
-                  >
+                  <button type="button" onClick={agregarHorario}
+                    className="text-xs text-red-500 hover:text-red-400 transition-colors font-medium">
                     + Agregar día
                   </button>
                 </div>
 
                 {horariosEditar.length === 0 && (
-                  <p className="text-xs text-zinc-700 italic">Sin horarios asignados</p>
+                  <p className="text-xs text-zinc-600 italic">Sin horarios asignados</p>
                 )}
 
                 <div className="space-y-2">
                   {horariosEditar.map((h, idx) => (
                     <div
                       key={idx}
-                      className={`grid gap-2 items-center transition-opacity ${h._eliminar ? 'opacity-30' : ''}`}
-                      style={{ gridTemplateColumns: '1fr 1fr 1fr auto' }}
+                      className={`transition-opacity ${h._eliminar ? 'opacity-30' : ''}`}
                     >
-                      <select
-                        value={h.dia}
-                        disabled={h._eliminar}
-                        onChange={e => setHorario(idx, 'dia', e.target.value)}
-                        className="bg-[#1c1c1c] border border-white/5 text-white rounded-lg px-2 py-2 text-sm focus:outline-none focus:border-red-600 disabled:text-zinc-600"
-                      >
-                        {['lunes','martes','miercoles','jueves','viernes','sabado'].map(d => (
-                          <option key={d} value={d}>
-                            {d.charAt(0).toUpperCase() + d.slice(1).replace('miercoles','Miércoles').replace('sabado','Sábado')}
-                          </option>
-                        ))}
-                      </select>
-                      <input
-                        type="time"
-                        value={h.hora?.slice(0, 5) || ''}
-                        disabled={h._eliminar}
-                        onChange={e => setHorario(idx, 'hora', e.target.value)}
-                        className="bg-[#1c1c1c] border border-white/5 text-white rounded-lg px-2 py-2 text-sm focus:outline-none focus:border-red-600 disabled:text-zinc-600"
-                      />
-                      <select
-                        value={h.tipo}
-                        disabled={h._eliminar}
-                        onChange={e => setHorario(idx, 'tipo', e.target.value)}
-                        className="bg-[#1c1c1c] border border-white/5 text-white rounded-lg px-2 py-2 text-sm focus:outline-none focus:border-red-600 disabled:text-zinc-600"
-                      >
-                        <option value="grupal">Grupal</option>
-                        <option value="personalizado">Personalizado</option>
-                      </select>
-                      <button
-                        type="button"
-                        onClick={() => marcarEliminarHorario(idx)}
-                        className={`w-7 h-7 flex items-center justify-center rounded-lg text-sm transition-all ${
-                          h._eliminar
-                            ? 'text-green-500 hover:bg-green-900/20'
-                            : 'text-zinc-600 hover:text-red-400 hover:bg-red-900/20'
-                        }`}
-                        title={h._eliminar ? 'Restaurar' : 'Eliminar'}
-                      >
-                        {h._eliminar ? '↩' : '✕'}
-                      </button>
+                      <div className="grid grid-cols-2 sm:grid-cols-[1fr_1fr_1fr_auto] gap-2 items-center">
+                        <select value={h.dia} disabled={h._eliminar} onChange={e => setHorario(idx, 'dia', e.target.value)}
+                          className="bg-raised border border-border text-foreground rounded-lg px-2 py-2 text-sm focus:outline-none focus:border-red-600 disabled:text-zinc-500">
+                          {['lunes','martes','miercoles','jueves','viernes','sabado'].map(d => (
+                            <option key={d} value={d}>
+                              {d.charAt(0).toUpperCase() + d.slice(1).replace('miercoles','Miércoles').replace('sabado','Sábado')}
+                            </option>
+                          ))}
+                        </select>
+                        <div className="flex gap-2 items-center">
+                          <input type="time" value={h.hora?.slice(0, 5) || ''} disabled={h._eliminar}
+                            onChange={e => setHorario(idx, 'hora', e.target.value)}
+                            className="flex-1 bg-raised border border-border text-foreground rounded-lg px-2 py-2 text-sm focus:outline-none focus:border-red-600 disabled:text-zinc-500" />
+                          {/* Delete en móvil (col 2, fila 1) */}
+                          <button type="button" onClick={() => marcarEliminarHorario(idx)}
+                            className={`sm:hidden w-7 h-7 flex items-center justify-center rounded-lg text-sm shrink-0 ${
+                              h._eliminar ? 'text-green-500' : 'text-zinc-600 hover:text-red-400'
+                            }`}>
+                            {h._eliminar ? '↩' : '✕'}
+                          </button>
+                        </div>
+                        <select value={h.tipo} disabled={h._eliminar} onChange={e => setHorario(idx, 'tipo', e.target.value)}
+                          className="col-span-2 sm:col-span-1 bg-raised border border-border text-foreground rounded-lg px-2 py-2 text-sm focus:outline-none focus:border-red-600 disabled:text-zinc-500">
+                          <option value="grupal">Grupal</option>
+                          <option value="personalizado">Personalizado</option>
+                        </select>
+                        {/* Delete en desktop (col 4) */}
+                        <button type="button" onClick={() => marcarEliminarHorario(idx)}
+                          className={`hidden sm:flex w-7 h-7 items-center justify-center rounded-lg text-sm transition-all ${
+                            h._eliminar
+                              ? 'text-green-500 hover:bg-green-900/20'
+                              : 'text-zinc-600 hover:text-red-400 hover:bg-red-900/20'
+                          }`}
+                          title={h._eliminar ? 'Restaurar' : 'Eliminar'}>
+                          {h._eliminar ? '↩' : '✕'}
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -623,12 +663,56 @@ export default function AlumnosList({
 
             <div className="flex gap-2 px-6 pb-5">
               <button onClick={() => setModalEditar(null)} disabled={guardandoEdit}
-                className="flex-1 border border-white/10 text-zinc-400 hover:text-white text-sm py-2.5 rounded-xl transition-all disabled:opacity-50">
+                className="flex-1 border border-border-strong text-zinc-500 hover:text-foreground text-sm py-2.5 rounded-xl transition-all disabled:opacity-50">
                 Cancelar
               </button>
               <button onClick={guardarEditar} disabled={guardandoEdit}
                 className="flex-1 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white text-sm font-bold py-2.5 rounded-xl transition-colors">
                 {guardandoEdit ? 'Guardando...' : 'Guardar cambios'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal advertencia de capacidad */}
+      {capWarning && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+          <div className="bg-surface border border-border-strong rounded-2xl p-6 w-full max-w-sm shadow-2xl">
+            <div className="w-12 h-12 rounded-full bg-amber-500/20 flex items-center justify-center mx-auto mb-4">
+              <span className="text-amber-500 text-xl">⚠</span>
+            </div>
+            <h3 className="text-foreground font-bold text-base text-center mb-1">
+              Bloque al límite de capacidad
+            </h3>
+            <p className="text-sm text-zinc-500 text-center mb-3">
+              Los siguientes bloques ya tienen 16 alumnos:
+            </p>
+            <div className="space-y-1.5 mb-5">
+              {capWarning.items.map((item, i) => (
+                <div key={i} className="flex items-center justify-between bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-2">
+                  <span className="text-sm font-medium text-foreground capitalize">
+                    {item.dia} {item.hora}
+                  </span>
+                  <span className="text-xs font-bold text-amber-500">{item.count}/16</span>
+                </div>
+              ))}
+            </div>
+            <p className="text-xs text-zinc-600 text-center mb-5">
+              Podés agregar el alumno igual, pero el bloque superará el límite recomendado.
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setCapWarning(null)}
+                className="flex-1 border border-border-strong text-zinc-500 hover:text-foreground text-sm py-2.5 rounded-xl transition-all"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={capWarning.onConfirmar}
+                className="flex-1 bg-amber-500 hover:bg-amber-600 text-white text-sm font-bold py-2.5 rounded-xl transition-colors"
+              >
+                Agregar igual
               </button>
             </div>
           </div>

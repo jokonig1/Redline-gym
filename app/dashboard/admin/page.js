@@ -92,23 +92,23 @@ export default function AdminInicio() {
         <div className="text-xs text-zinc-500 tracking-widest mb-1 capitalize">
           {diaLabel}, {fechaLabel}
         </div>
-        <h1 className="text-2xl sm:text-3xl font-black text-white">
+        <h1 className="text-2xl sm:text-3xl font-black text-foreground">
           Bienvenido, <span className="text-red-500">{nombre}</span>
         </h1>
       </div>
 
       {/* Mis clases de hoy */}
       <div className="flex items-center justify-between mb-4">
-        <div className="text-sm font-bold text-white">Mis clases de hoy</div>
+        <div className="text-sm font-bold text-foreground">Mis clases de hoy</div>
         <div className="text-xs text-zinc-600">
           {clases.length} {clases.length === 1 ? 'clase' : 'clases'}
         </div>
       </div>
 
       {clases.length === 0 ? (
-        <div className="bg-[#141414] border border-white/5 rounded-2xl p-10 text-center">
+        <div className="bg-surface border border-border rounded-2xl p-10 text-center">
           <div className="text-4xl mb-3">🏋️</div>
-          <div className="text-white font-bold mb-1">Sin clases hoy</div>
+          <div className="text-foreground font-bold mb-1">Sin clases hoy</div>
           <div className="text-zinc-600 text-sm">Disfruta tu día libre</div>
         </div>
       ) : (
@@ -119,7 +119,7 @@ export default function AdminInicio() {
                 <span className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider">
                   {HORAS_LABEL[hora] || hora}
                 </span>
-                <div className="flex-1 h-px bg-white/5" />
+                <div className="flex-1 h-px bg-border" />
               </div>
 
               <div className="flex flex-col sm:flex-row sm:flex-wrap gap-3">
@@ -132,13 +132,13 @@ export default function AdminInicio() {
                     <button
                       key={`${slot.id}-${i}`}
                       onClick={() => setModalSlot(slot)}
-                      className="flex items-center gap-3 bg-[#141414] border border-white/8 rounded-2xl px-4 py-3.5 hover:bg-white/3 hover:border-white/15 transition-all text-left w-full sm:w-auto sm:flex-1 sm:min-w-48 active:scale-[0.98]"
+                      className="flex items-center gap-3 bg-surface border border-border-md rounded-2xl px-4 py-3.5 hover:bg-hover hover:border-border-strong transition-all text-left w-full sm:w-auto sm:flex-1 sm:min-w-48 active:scale-[0.98]"
                     >
                       <div className="w-10 h-10 rounded-full bg-red-900/30 flex items-center justify-center text-sm font-black text-red-400 shrink-0">
                         {iniciales}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="text-sm font-bold text-white truncate">{slot.alumno?.nombre}</div>
+                        <div className="text-sm font-bold text-foreground truncate">{slot.alumno?.nombre}</div>
                         <div className="text-xs text-zinc-500 mt-0.5">
                           {slot.tipo === 'grupal' ? 'Grupal' : 'Personalizado'}
                           {slot.tipo_slot === 'movida' && (
@@ -148,7 +148,7 @@ export default function AdminInicio() {
                       </div>
                       <div className="shrink-0">
                         {!asist ? (
-                          <span className="text-[9px] text-zinc-700 font-medium px-2 py-1 rounded-full bg-white/3 border border-white/5">
+                          <span className="text-[9px] text-zinc-700 font-medium px-2 py-1 rounded-full bg-hover border border-border">
                             Pendiente
                           </span>
                         ) : asist.asistio ? (
@@ -161,7 +161,7 @@ export default function AdminInicio() {
                           </span>
                         )}
                       </div>
-                      <span className="text-zinc-700 text-sm shrink-0">›</span>
+                      <span className="text-zinc-500 text-sm shrink-0">›</span>
                     </button>
                   )
                 })}

@@ -10,9 +10,10 @@ export default function TarjetaDiaria({
 
   return (
     <div
-      className="flex items-center gap-3 rounded-xl px-4 py-3 select-none transition-all w-full sm:flex-1 sm:min-w-48 hover:brightness-110"
+      className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 select-none transition-all w-full hover:brightness-110"
       style={{ background: color.bg, border: `1px solid ${color.border}30` }}
     >
+      {/* Avatar */}
       <div
         className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-black shrink-0"
         style={{ background: color.border + '25', color: color.text }}
@@ -20,37 +21,49 @@ export default function TarjetaDiaria({
         {slot.alumno?.nombre?.split(' ').map(n => n[0]).join('').slice(0, 2)}
       </div>
 
+      {/* Nombre + tipo */}
       <div className="flex-1 min-w-0">
-        <div className="text-sm font-bold text-white truncate">{slot.alumno?.nombre}</div>
-        <div className="text-xs flex items-center gap-1.5" style={{ color: color.text }}>
-          {slot.tipo === 'grupal' ? 'Grupal' : 'Personalizado'}
-          {slot.coach?.nombre && <> · {slot.coach.nombre.split(' ')[0]}</>}
+        <div className="text-sm font-bold truncate leading-tight" style={{ color: color.border }}>
+          {slot.alumno?.nombre}
+        </div>
+        <div className="text-[11px] truncate leading-tight mt-0.5" style={{ color: color.border + 'bb' }}>
+          {slot.tipo === 'grupal' ? 'Grupal' : 'Personal'}
+          {slot.coach?.nombre && <span> · {slot.coach.nombre.split(' ')[0]}</span>}
         </div>
       </div>
 
-      <div className="flex items-center gap-1 ml-auto shrink-0" onClick={e => e.stopPropagation()}>
+      {/* Acciones — iconos compactos, siempre caben */}
+      <div className="flex items-center gap-0.5 shrink-0" onClick={e => e.stopPropagation()}>
         <button
           onClick={() => onVerPerfil(slot.alumno?.id)}
           title="Ver perfil"
-          className="text-xs text-zinc-500 hover:text-zinc-200 px-2 py-1 rounded-lg hover:bg-white/5 transition-all"
+          className="w-7 h-7 flex items-center justify-center rounded-lg text-sm transition-all hover:bg-black/10"
+          style={{ color: color.border + 'aa' }}
         >
           ◉
         </button>
+
         {editable && slot.excepcion && (
           <button
             onClick={() => onDeshacer(slot.excepcion.id)}
             title="Restaurar horario original"
-            className="text-xs text-zinc-500 hover:text-zinc-200 px-2 py-1 rounded-lg hover:bg-white/5 transition-all"
+            className="w-7 h-7 flex items-center justify-center rounded-lg text-sm transition-all hover:bg-black/10"
+            style={{ color: color.border + 'aa' }}
           >
             ↩
           </button>
         )}
+
         {editable && (
           <button
             onClick={() => onAbrirModal(slot)}
-            className="text-xs px-3 py-1.5 rounded-lg border border-white/10 text-zinc-400 hover:text-white hover:border-white/20 transition-all"
+            title={slot.excepcion ? 'Editar excepción' : 'Mover clase'}
+            className="h-7 rounded-lg border text-xs font-medium transition-all hover:bg-black/10 flex items-center px-1.5 sm:px-2.5"
+            style={{ color: color.border, borderColor: color.border + '50' }}
           >
-            {slot.excepcion ? 'Editar' : 'Mover'}
+            {/* Icono en móvil, texto en sm+ */}
+            <span className="sm:hidden">↗</span>
+            <span className="hidden sm:inline">{slot.excepcion ? 'Editar' : 'Mover'}</span>
           </button>
         )}
       </div>

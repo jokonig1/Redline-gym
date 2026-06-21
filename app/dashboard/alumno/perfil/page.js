@@ -13,7 +13,6 @@ export default function AlumnoPerfil() {
   const [guardado, setGuardado] = useState(false)
   const [error,    setError]    = useState('')
 
-  // ── Init: obtener email del usuario auth ──────────────────────────────────
   useEffect(() => {
     const supabase = createClient()
     async function init() {
@@ -23,7 +22,6 @@ export default function AlumnoPerfil() {
     init()
   }, [])
 
-  // ── Cargar datos del alumno y coaches ─────────────────────────────────────
   useEffect(() => {
     if (!email) return
     async function load() {
@@ -42,7 +40,6 @@ export default function AlumnoPerfil() {
     load()
   }, [email])
 
-  // ── Guardar coach ─────────────────────────────────────────────────────────
   async function handleGuardar() {
     if (!alumno) return
     setSaving(true)
@@ -70,9 +67,9 @@ export default function AlumnoPerfil() {
   if (loading) return <LoadingSpinner />
 
   if (!alumno) return (
-    <div className="bg-[#141414] border border-white/5 rounded-xl p-8 text-center max-w-md">
+    <div className="bg-surface border border-border rounded-xl p-8 text-center max-w-md">
       <div className="text-3xl mb-3">⚠️</div>
-      <div className="text-white font-bold mb-1">Perfil no encontrado</div>
+      <div className="text-foreground font-bold mb-1">Perfil no encontrado</div>
       <div className="text-zinc-500 text-sm">
         Tu cuenta no tiene un perfil de alumno asociado.<br />
         Contactá al administrador del gimnasio.
@@ -86,28 +83,28 @@ export default function AlumnoPerfil() {
     <div className="max-w-lg space-y-4">
 
       {/* Header */}
-      <div className="bg-[#141414] border border-white/5 rounded-xl p-5 flex items-center gap-4">
+      <div className="bg-surface border border-border rounded-xl p-5 flex items-center gap-4">
         <div className="w-14 h-14 rounded-full bg-red-900/30 flex items-center justify-center text-xl font-black text-red-400 shrink-0">
           {initials}
         </div>
         <div>
-          <h2 className="text-white font-bold text-lg leading-tight">{alumno.nombre}</h2>
+          <h2 className="text-foreground font-bold text-lg leading-tight">{alumno.nombre}</h2>
           <div className="text-xs text-zinc-500 mt-0.5">{alumno.email}</div>
           <div className="text-xs text-zinc-600 mt-1">{alumno.plan || '—'}</div>
         </div>
       </div>
 
       {/* Elegir coach */}
-      <div className="bg-[#141414] border border-white/5 rounded-xl p-5">
+      <div className="bg-surface border border-border rounded-xl p-5">
         <div className="text-xs text-zinc-500 uppercase tracking-widest mb-4">Mi coach</div>
 
         {alumno.coach?.nombre && (
-          <div className="flex items-center gap-3 mb-4 p-3 bg-white/3 border border-white/5 rounded-xl">
+          <div className="flex items-center gap-3 mb-4 p-3 bg-hover border border-border rounded-xl">
             <div className="w-8 h-8 rounded-full bg-red-900/30 flex items-center justify-center text-xs font-bold text-red-400 shrink-0">
               {alumno.coach.nombre.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
             </div>
             <div>
-              <div className="text-sm font-medium text-white">{alumno.coach.nombre}</div>
+              <div className="text-sm font-medium text-foreground">{alumno.coach.nombre}</div>
               <div className="text-[10px] text-zinc-500">Coach actual</div>
             </div>
           </div>
@@ -119,7 +116,7 @@ export default function AlumnoPerfil() {
         <select
           value={coachId}
           onChange={e => setCoachId(e.target.value)}
-          className="w-full bg-[#1c1c1c] border border-white/5 text-white rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-red-600 transition-colors mb-4"
+          className="w-full bg-raised border border-border text-foreground rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-red-600 transition-colors mb-4"
         >
           <option value="">Sin asignar</option>
           {coaches.map(c => (
@@ -149,7 +146,7 @@ export default function AlumnoPerfil() {
       </div>
 
       {/* Datos personales (solo lectura) */}
-      <div className="bg-[#141414] border border-white/5 rounded-xl p-5">
+      <div className="bg-surface border border-border rounded-xl p-5">
         <div className="text-xs text-zinc-500 uppercase tracking-widest mb-4">Mis datos</div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {[
@@ -160,11 +157,11 @@ export default function AlumnoPerfil() {
           ].map(({ label, value }) => (
             <div key={label}>
               <div className="text-[10px] text-zinc-500 uppercase tracking-wider mb-1">{label}</div>
-              <div className="text-sm text-white">{value || <span className="text-zinc-600">—</span>}</div>
+              <div className="text-sm text-foreground">{value || <span className="text-zinc-500">—</span>}</div>
             </div>
           ))}
         </div>
-        <p className="text-[11px] text-zinc-700 mt-4">
+        <p className="text-[11px] text-zinc-600 mt-4">
           Para modificar tus datos personales, contactá al administrador.
         </p>
       </div>

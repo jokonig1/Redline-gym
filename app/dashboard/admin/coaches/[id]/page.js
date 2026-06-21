@@ -38,29 +38,29 @@ export default function DetalleCoach() {
   return (
     <div className="max-w-3xl">
       <div className="flex items-center gap-4 mb-6">
-        <button onClick={() => router.back()} className="text-zinc-500 hover:text-white transition-colors text-sm">
+        <button onClick={() => router.back()} className="text-zinc-500 hover:text-foreground transition-colors text-sm">
           ← Volver
         </button>
       </div>
 
       {/* Header */}
-      <div className="bg-[#141414] border border-white/5 rounded-xl p-5 mb-4 flex items-center gap-4">
+      <div className="bg-surface border border-border rounded-xl p-5 mb-4 flex items-center gap-4">
         <div className="w-14 h-14 rounded-full bg-red-900/30 flex items-center justify-center text-xl font-black text-red-400">
           {initials}
         </div>
         <div className="flex-1">
-          <h2 className="text-white font-bold text-lg">{coach.nombre}</h2>
+          <h2 className="text-foreground font-bold text-lg">{coach.nombre}</h2>
           <div className="text-zinc-500 text-sm">{coach.email}</div>
           <div className="mt-1">
             <StatusBadge activo={coach.activo} />
           </div>
         </div>
         <div className="grid grid-cols-2 gap-3 text-center">
-          <div className="bg-[#1c1c1c] rounded-lg px-4 py-3">
-            <div className="text-2xl font-black text-white">{alumnos.length}</div>
+          <div className="bg-raised rounded-lg px-4 py-3">
+            <div className="text-2xl font-black text-foreground">{alumnos.length}</div>
             <div className="text-[10px] text-zinc-500 uppercase tracking-widest">Total</div>
           </div>
-          <div className="bg-[#1c1c1c] rounded-lg px-4 py-3">
+          <div className="bg-raised rounded-lg px-4 py-3">
             <div className="text-2xl font-black text-green-400">{activos}</div>
             <div className="text-[10px] text-zinc-500 uppercase tracking-widest">Activos</div>
           </div>
@@ -68,8 +68,8 @@ export default function DetalleCoach() {
       </div>
 
       {/* Lista de alumnos */}
-      <div className="bg-[#141414] border border-white/5 rounded-xl overflow-hidden">
-        <div className="px-5 py-4 border-b border-white/5">
+      <div className="bg-surface border border-border rounded-xl overflow-hidden">
+        <div className="px-5 py-4 border-b border-border">
           <div className="text-xs text-zinc-500 uppercase tracking-widest">
             Alumnos asignados ({alumnos.length})
           </div>
@@ -83,19 +83,19 @@ export default function DetalleCoach() {
           alumnos.map(alumno => (
             <div
               key={alumno.id}
-              className="flex items-center gap-3 px-5 py-3.5 border-b border-white/5 hover:bg-white/2 transition-colors"
+              className="flex items-center gap-3 px-5 py-3.5 border-b border-border hover:bg-hover transition-colors"
             >
-              <div className="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center text-xs font-bold text-zinc-400">
+              <div className="w-8 h-8 rounded-full bg-raised flex items-center justify-center text-xs font-bold text-zinc-500">
                 {alumno.nombre.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
               </div>
               <div className="flex-1">
-                <div className="text-sm font-medium text-white">{alumno.nombre}</div>
+                <div className="text-sm font-medium text-foreground">{alumno.nombre}</div>
                 <div className="text-xs text-zinc-500">{alumno.plan} · {alumno.email || '—'}</div>
               </div>
               <StatusBadge activo={alumno.activo} />
               <button
                 onClick={() => router.push(`/dashboard/admin/alumnos/${alumno.id}`)}
-                className="text-xs text-zinc-500 hover:text-white transition-colors px-3 py-1.5 rounded-lg hover:bg-white/5"
+                className="text-xs text-zinc-500 hover:text-foreground transition-colors px-3 py-1.5 rounded-lg hover:bg-hover-md"
               >
                 Ver →
               </button>

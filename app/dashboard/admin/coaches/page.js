@@ -31,7 +31,6 @@ export default function CoachesPage() {
 
       if (!lista) { setLoading(false); return }
 
-      // Single query for all active alumnos; count client-side (avoids N+1)
       const { data: alumnosActivos } = await supabase
         .from('alumnos')
         .select('coach_id')
@@ -144,7 +143,7 @@ export default function CoachesPage() {
 
           return (
             <div key={coach.id}
-              className="bg-[#141414] border border-white/5 rounded-xl p-5 hover:border-white/10 transition-colors">
+              className="bg-surface border border-border rounded-xl p-5 hover:border-border-strong transition-colors">
 
               {/* Cabecera */}
               <div className="flex items-start justify-between mb-4">
@@ -156,7 +155,7 @@ export default function CoachesPage() {
                     {initials}
                   </div>
                   <div>
-                    <div className="text-white font-semibold text-sm">{coach.nombre}</div>
+                    <div className="text-foreground font-semibold text-sm">{coach.nombre}</div>
                     <div className="text-zinc-500 text-xs">{coach.email}</div>
                   </div>
                 </div>
@@ -165,22 +164,22 @@ export default function CoachesPage() {
                 <div className="relative" ref={menuAbierto === coach.id ? menuRef : null}>
                   <button
                     onClick={() => setMenuAbierto(prev => prev === coach.id ? null : coach.id)}
-                    className="w-8 h-8 flex items-center justify-center rounded-lg text-zinc-500 hover:text-white hover:bg-white/5 transition-all text-lg leading-none"
+                    className="w-8 h-8 flex items-center justify-center rounded-lg text-zinc-500 hover:text-foreground hover:bg-hover-md transition-all text-lg leading-none"
                   >
                     ···
                   </button>
 
                   {menuAbierto === coach.id && (
-                    <div className="absolute right-0 top-9 z-20 bg-[#1c1c1c] border border-white/10 rounded-xl shadow-2xl shadow-black/50 py-1.5 w-40">
+                    <div className="absolute right-0 top-9 z-20 bg-raised border border-border-strong rounded-xl shadow-2xl shadow-black/20 py-1.5 w-40">
                       <button
                         onClick={() => router.push(`/dashboard/admin/coaches/${coach.id}`)}
-                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-zinc-300 hover:text-white hover:bg-white/5 transition-colors text-left"
+                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-foreground-2 hover:text-foreground hover:bg-hover-md transition-colors text-left"
                       >
                         <span>◉</span> Ver detalle
                       </button>
                       <button
                         onClick={() => abrirEditar(coach)}
-                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-zinc-300 hover:text-white hover:bg-white/5 transition-colors text-left"
+                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-foreground-2 hover:text-foreground hover:bg-hover-md transition-colors text-left"
                       >
                         <span>✎</span> Editar
                       </button>
@@ -188,7 +187,7 @@ export default function CoachesPage() {
                         onClick={() => toggleActivo(coach)}
                         className={`w-full flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors text-left ${
                           coach.activo
-                            ? 'text-zinc-400 hover:text-white hover:bg-white/5'
+                            ? 'text-zinc-500 hover:text-foreground hover:bg-hover-md'
                             : 'text-green-400 hover:text-green-300 hover:bg-green-900/20'
                         }`}
                       >
@@ -217,13 +216,13 @@ export default function CoachesPage() {
 
               {/* Stats */}
               <div className="grid grid-cols-2 gap-3 mb-4">
-                <div className="bg-[#1c1c1c] rounded-lg p-3">
+                <div className="bg-raised rounded-lg p-3">
                   <div className="text-[10px] text-zinc-500 uppercase tracking-widest mb-1">Alumnos</div>
-                  <div className="text-2xl font-black text-white">{coach.total_alumnos}</div>
+                  <div className="text-2xl font-black text-foreground">{coach.total_alumnos}</div>
                 </div>
-                <div className="bg-[#1c1c1c] rounded-lg p-3">
+                <div className="bg-raised rounded-lg p-3">
                   <div className="text-[10px] text-zinc-500 uppercase tracking-widest mb-1">Capacidad</div>
-                  <div className="text-2xl font-black text-white">{capacidad}%</div>
+                  <div className="text-2xl font-black text-foreground">{capacidad}%</div>
                 </div>
               </div>
 
@@ -233,7 +232,7 @@ export default function CoachesPage() {
                   <span>Ocupación</span>
                   <span>{coach.total_alumnos}/35</span>
                 </div>
-                <div className="h-1.5 bg-[#1c1c1c] rounded-full overflow-hidden">
+                <div className="h-1.5 bg-raised rounded-full overflow-hidden">
                   <div
                     className={`h-full rounded-full transition-all ${
                       capacidad >= 90 ? 'bg-red-500' :
@@ -251,15 +250,15 @@ export default function CoachesPage() {
       {/* Modal editar coach */}
       {modalEditar && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-          <div className="bg-[#141414] border border-white/10 rounded-2xl w-full max-w-md shadow-2xl">
+          <div className="bg-surface border border-border-strong rounded-2xl w-full max-w-md shadow-2xl">
 
-            <div className="flex items-center justify-between px-6 py-4 border-b border-white/5">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-border">
               <div>
-                <h3 className="text-white font-bold">Editar coach</h3>
+                <h3 className="text-foreground font-bold">Editar coach</h3>
                 <p className="text-xs text-zinc-500 mt-0.5">{modalEditar.email}</p>
               </div>
               <button onClick={() => setModalEditar(null)}
-                className="text-zinc-600 hover:text-white w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/5 transition-all">✕</button>
+                className="text-zinc-600 hover:text-foreground w-8 h-8 flex items-center justify-center rounded-lg hover:bg-hover-md transition-all">✕</button>
             </div>
 
             <div className="px-6 py-5 space-y-5">
@@ -268,7 +267,7 @@ export default function CoachesPage() {
                 <input
                   value={formEditar.nombre}
                   onChange={e => setFormEditar(f => ({ ...f, nombre: e.target.value }))}
-                  className="w-full bg-[#1c1c1c] border border-white/5 text-white rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-red-600 transition-colors"
+                  className="w-full bg-raised border border-border text-foreground rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-red-600 transition-colors"
                 />
               </div>
 
@@ -278,7 +277,7 @@ export default function CoachesPage() {
                   value={formEditar.telefono}
                   onChange={e => setFormEditar(f => ({ ...f, telefono: e.target.value }))}
                   placeholder="+56 9 xxxx xxxx"
-                  className="w-full bg-[#1c1c1c] border border-white/5 text-white rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-red-600 transition-colors placeholder-zinc-700"
+                  className="w-full bg-raised border border-border text-foreground rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-red-600 transition-colors placeholder-zinc-600"
                 />
               </div>
 
@@ -294,7 +293,7 @@ export default function CoachesPage() {
                       onClick={() => setFormEditar(f => ({ ...f, color: idx }))}
                       className={`w-8 h-8 rounded-full transition-all ${
                         formEditar.color !== null && formEditar.color !== undefined && Number(formEditar.color) === idx
-                          ? 'ring-2 ring-white ring-offset-2 ring-offset-[#141414] scale-110'
+                          ? 'ring-2 ring-white ring-offset-2 ring-offset-surface scale-110'
                           : 'hover:scale-105 opacity-70 hover:opacity-100'
                       }`}
                       style={{ background: c.border }}
@@ -323,7 +322,7 @@ export default function CoachesPage() {
 
             <div className="flex gap-2 px-6 pb-5">
               <button onClick={() => setModalEditar(null)} disabled={guardando}
-                className="flex-1 border border-white/10 text-zinc-400 hover:text-white text-sm py-2.5 rounded-xl transition-all disabled:opacity-50">
+                className="flex-1 border border-border-strong text-zinc-500 hover:text-foreground text-sm py-2.5 rounded-xl transition-all disabled:opacity-50">
                 Cancelar
               </button>
               <button onClick={guardarEditar} disabled={guardando}

@@ -7,13 +7,13 @@ export default function ModalMover({
 }) {
   return (
     <div className="fixed inset-0 bg-black/80 flex items-end sm:items-center justify-center z-50 p-4">
-      <div className="bg-[#141414] border border-white/10 rounded-2xl p-6 w-full max-w-md shadow-2xl">
+      <div className="bg-surface border border-border-strong rounded-2xl p-6 w-full max-w-md shadow-2xl">
 
         <div className="flex items-start justify-between mb-5">
           <div>
-            <h3 className="text-white font-bold text-base">Mover clase</h3>
+            <h3 className="text-foreground font-bold text-base">Mover clase</h3>
             <p className="text-xs text-zinc-500 mt-1">
-              <span className="text-zinc-300">{slot.alumno?.nombre}</span>
+              <span className="text-foreground-2">{slot.alumno?.nombre}</span>
               {' · '}
               <span className="capitalize">{slot.dia}</span>
               {' '}{slot.hora?.slice(0, 5)}
@@ -21,7 +21,7 @@ export default function ModalMover({
           </div>
           <button
             onClick={onClose}
-            className="text-zinc-600 hover:text-white w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/5 transition-all"
+            className="text-zinc-600 hover:text-foreground w-8 h-8 flex items-center justify-center rounded-lg hover:bg-hover-md transition-all"
           >
             ✕
           </button>
@@ -35,7 +35,7 @@ export default function ModalMover({
                 type="date"
                 value={form.fecha_nueva}
                 onChange={e => setForm(f => ({ ...f, fecha_nueva: e.target.value }))}
-                className="w-full bg-[#1c1c1c] border border-white/5 text-white rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-red-600 transition-colors"
+                className="w-full bg-raised border border-border text-foreground rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-red-600 transition-colors"
               />
             </div>
             <div>
@@ -44,25 +44,25 @@ export default function ModalMover({
                 type="time"
                 value={form.hora_nueva}
                 onChange={e => setForm(f => ({ ...f, hora_nueva: e.target.value }))}
-                className="w-full bg-[#1c1c1c] border border-white/5 text-white rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-red-600 transition-colors"
+                className="w-full bg-raised border border-border text-foreground rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-red-600 transition-colors"
               />
             </div>
           </div>
 
           <div>
             <label className="text-[11px] text-zinc-500 uppercase tracking-wider block mb-1.5">
-              Motivo <span className="normal-case text-zinc-700">(opcional)</span>
+              Motivo <span className="normal-case text-zinc-600">(opcional)</span>
             </label>
             <input
               type="text"
               value={form.motivo}
               onChange={e => setForm(f => ({ ...f, motivo: e.target.value }))}
               placeholder="Ej: Feriado, viaje, lesión..."
-              className="w-full bg-[#1c1c1c] border border-white/5 text-white rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-red-600 placeholder-zinc-700 transition-colors"
+              className="w-full bg-raised border border-border text-foreground rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-red-600 placeholder-zinc-600 transition-colors"
             />
           </div>
 
-          <p className="text-[11px] text-zinc-700 bg-zinc-900/50 rounded-lg px-3 py-2.5 leading-relaxed">
+          <p className="text-[11px] text-zinc-600 bg-raised rounded-lg px-3 py-2.5 leading-relaxed">
             ℹ Solo aplica esta semana. La siguiente vuelve al horario habitual automáticamente.
           </p>
 
@@ -75,7 +75,7 @@ export default function ModalMover({
           {slot.excepcion && (
             <button
               onClick={onDeshacer}
-              className="w-full text-sm text-zinc-500 hover:text-white py-2.5 rounded-xl border border-white/5 hover:bg-white/5 transition-all"
+              className="w-full text-sm text-zinc-500 hover:text-foreground py-2.5 rounded-xl border border-border hover:bg-hover-md transition-all"
             >
               ↩ Restaurar al horario original
             </button>
@@ -84,7 +84,7 @@ export default function ModalMover({
           <div className="flex gap-2">
             <button
               onClick={onClose}
-              className="flex-1 border border-white/10 text-zinc-400 hover:text-white text-sm py-2.5 rounded-xl transition-all"
+              className="flex-1 border border-border-strong text-zinc-500 hover:text-foreground text-sm py-2.5 rounded-xl transition-all"
             >
               Cancelar
             </button>
