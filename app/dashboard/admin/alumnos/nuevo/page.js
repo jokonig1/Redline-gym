@@ -2,14 +2,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { DIAS, DIAS_LABEL_LARGO } from '@/lib/constants'
-
-const DIAS_POR_PLAN = {
-  '2x/sem': ['lunes', 'miercoles'],
-  '3x/sem': ['lunes', 'miercoles', 'viernes'],
-  'Full':   ['lunes', 'martes', 'miercoles', 'jueves', 'viernes'],
-  'Personalizado': ['lunes'],
-}
+import { DIAS, DIAS_LABEL_LARGO, DIAS_POR_PLAN } from '@/lib/constants'
 
 function horariosParaPlan(plan) {
   return (DIAS_POR_PLAN[plan] || ['lunes']).map(dia => ({
@@ -41,7 +34,7 @@ export default function NuevoAlumno() {
     nombre: '', rut: '', fecha_nacimiento: '', telefono: '',
     email: '', direccion: '', contacto_emergencia: '',
     telefono_emergencia: '', objetivos: '',
-    restricciones_medicas: '', plan: '3x/sem', coach_id: '',
+    restricciones_medicas: '', tipo_clase: 'Grupal', plan: '3x/sem', coach_id: '',
   })
   const [horarios, setHorarios] = useState(() => horariosParaPlan('3x/sem'))
 
@@ -167,16 +160,42 @@ export default function NuevoAlumno() {
         <div className="bg-surface border border-border rounded-xl p-5">
           <div className="text-xs text-zinc-500 uppercase tracking-widest mb-4">Información del gimnasio</div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+            {/* Tipo de clase */}
             <div>
-              <label className="text-xs text-zinc-500 uppercase tracking-wider block mb-1.5">Plan</label>
+              <label className="text-xs text-zinc-500 uppercase tracking-wider block mb-1.5">Tipo de clase</label>
+              <div className="flex gap-2">
+                {['Grupal', 'Personalizado'].map(t => (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => setForm(f => ({ ...f, tipo_clase: t }))}
+                    className={`flex-1 py-2.5 rounded-lg border text-sm font-medium transition-all ${
+                      form.tipo_clase === t
+                        ? 'bg-red-600/15 border-red-600/40 text-red-500'
+                        : 'border-border text-zinc-500 hover:text-foreground bg-raised'
+                    }`}
+                  >
+                    {t}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Frecuencia semanal */}
+            <div>
+              <label className="text-xs text-zinc-500 uppercase tracking-wider block mb-1.5">Días por semana</label>
               <select name="plan" value={form.plan} onChange={handleChange}
                 className="w-full bg-raised border border-border text-foreground rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-red-600">
-                <option value="2x/sem">2x por semana</option>
-                <option value="3x/sem">3x por semana</option>
-                <option value="Full">Full (5x/sem)</option>
-                <option value="Personalizado">Personalizado</option>
+                <option value="1x/sem">1 día</option>
+                <option value="2x/sem">2 días</option>
+                <option value="3x/sem">3 días</option>
+                <option value="4x/sem">4 días</option>
+                <option value="5x/sem">5 días</option>
+                <option value="6x/sem">6 días</option>
               </select>
             </div>
+
             <div>
               <label className="text-xs text-zinc-500 uppercase tracking-wider block mb-1.5">Coach asignado</label>
               <select name="coach_id" value={form.coach_id} onChange={handleChange}

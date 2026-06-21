@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import LoadingSpinner from '@/app/dashboard/_components/LoadingSpinner'
 import { COLORES_COACH } from '@/lib/constants'
 
@@ -59,10 +59,187 @@ function SectionTitle({ children }) {
   )
 }
 
+// ── Gráfico de barras verticales: ocupación por horario ──────────────────────
+
+const DIAS_ORDER = ['lunes','martes','miercoles','jueves','viernes','sabado']
+const DIAS_SHORT  = { lunes:'Lu', martes:'Ma', miercoles:'Mi', jueves:'Ju', viernes:'Vi', sabado:'Sá' }
+
+function nivelOcupacion(count, cap) {
+  const pct = count / cap
+  if (count === 0)   return { color: '#d1d5db', label: 'Sin alumnos',    bg: 'bg-zinc-200' }
+  if (pct >= 0.875)  return { color: '#ef4444', label: 'Muy concurrido', bg: 'bg-red-500'    }
+  if (pct >= 0.625)  return { color: '#f59e0b', label: 'Concurrido',     bg: 'bg-amber-400'  }
+  if (pct >= 0.375)  return { color: '#22c55e', label: 'Moderado',       bg: 'bg-green-500'  }
+  return                    { color: '#86efac', label: 'Libre',           bg: 'bg-green-300'  }
+}
+
+function GraficoOcupacion({ porHora, porDiaHora, capacidad }) {
+  const [filtroDia, setFiltroDia] = useState(null)
+  const [tooltip,   setTooltip]   = useState(null) // { x, y, hora, count, nivel }
+
+  const datos = filtroDia
+    ? porDiaHora.filter(d => d.dia === filtroDia).map(d => ({ hora: d.hora, count: d.count }))
+    : porHora
+
+  if (datos.length === 0) {
+    return <p className="text-xs text-zinc-600 italic text-center py-6">Sin horarios asignados</p>
+  }
+
+  const CHART_H  = 100
+  const BAR_W    = 22
+  const GAP      = 6
+  const PAD_L    = 4
+  const PAD_R    = 4
+  const PAD_T    = 8
+  const PAD_B    = 22
+  const W        = datos.length * (BAR_W + GAP) - GAP + PAD_L + PAD_R
+  const H        = CHART_H + PAD_T + PAD_B
+
+  // Líneas de referencia (25%, 50%, 75%, 100%)
+  const gridLines = [0.25, 0.5, 0.75, 1].map(pct => ({
+    pct,
+    y: PAD_T + CHART_H - pct * CHART_H,
+  }))
+
+  return (
+    <div className="space-y-3">
+
+      {/* Filtro por día */}
+      <div className="flex gap-1 flex-wrap">
+        <button onClick={() => setFiltroDia(null)}
+          className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${
+            filtroDia === null ? 'bg-red-600 text-white' : 'text-zinc-500 hover:text-foreground hover:bg-hover-md'
+          }`}>
+          Todos
+        </button>
+        {DIAS_ORDER.map(dia => {
+          if (!porDiaHora.some(d => d.dia === dia)) return null
+          return (
+            <button key={dia} onClick={() => setFiltroDia(dia === filtroDia ? null : dia)}
+              className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${
+                filtroDia === dia ? 'bg-red-600 text-white' : 'text-zinc-500 hover:text-foreground hover:bg-hover-md'
+              }`}>
+              {DIAS_SHORT[dia]}
+            </button>
+          )
+        })}
+      </div>
+
+      {/* Gráfico */}
+      <div className="relative overflow-x-auto">
+        <svg
+          viewBox={`0 0 ${W} ${H}`}
+          width="100%"
+          style={{ minWidth: Math.min(W, 300), maxHeight: 160 }}
+          onMouseLeave={() => setTooltip(null)}
+        >
+          {/* Líneas de grid */}
+          {gridLines.map(({ pct, y }) => (
+            <g key={pct}>
+              <line
+                x1={PAD_L} x2={W - PAD_R} y1={y} y2={y}
+                stroke="currentColor" strokeOpacity="0.08" strokeWidth="0.8"
+                strokeDasharray={pct === 1 ? 'none' : '3 2'}
+              />
+              <text x={PAD_L} y={y - 2} fontSize="5.5" fill="currentColor" opacity="0.35">
+                {Math.round(pct * capacidad)}
+              </text>
+            </g>
+          ))}
+
+          {/* Barras */}
+          {datos.map(({ hora, count }, i) => {
+            const nivel  = nivelOcupacion(count, capacidad)
+            const barH   = count > 0 ? (count / capacidad) * CHART_H : 2
+            const x      = PAD_L + i * (BAR_W + GAP)
+            const y      = PAD_T + CHART_H - barH
+            const hLabel = `${parseInt(hora)}h`
+
+            return (
+              <g key={hora}
+                onMouseEnter={ev => {
+                  const rect = ev.currentTarget.closest('svg').getBoundingClientRect()
+                  setTooltip({ i, hora, count, nivel })
+                }}
+                style={{ cursor: 'pointer' }}
+              >
+                {/* Zona hover invisible */}
+                <rect x={x} y={PAD_T} width={BAR_W} height={CHART_H} fill="transparent" />
+
+                {/* Barra */}
+                <rect
+                  x={x} y={y} width={BAR_W} height={barH}
+                  rx="3"
+                  fill={tooltip?.i === i ? nivel.color : nivel.color + 'cc'}
+                  style={{ transition: 'height 0.6s ease, y 0.6s ease' }}
+                />
+
+                {/* Label hora */}
+                <text
+                  x={x + BAR_W / 2} y={H - 4}
+                  textAnchor="middle" fontSize="6.5"
+                  fill="currentColor" opacity="0.45"
+                >
+                  {hLabel}
+                </text>
+
+                {/* Número encima si hay espacio */}
+                {count > 0 && barH > 14 && (
+                  <text
+                    x={x + BAR_W / 2} y={y + 10}
+                    textAnchor="middle" fontSize="7" fontWeight="bold"
+                    fill="white"
+                  >
+                    {count}
+                  </text>
+                )}
+              </g>
+            )
+          })}
+        </svg>
+
+        {/* Tooltip flotante */}
+        {tooltip && (
+          <div className="absolute left-1/2 top-0 -translate-x-1/2 pointer-events-none z-10">
+            <div className="bg-surface border border-border-strong rounded-xl shadow-xl px-3 py-2 text-center whitespace-nowrap">
+              <div className="text-xs font-bold text-foreground">{tooltip.hora}</div>
+              <div className="text-lg font-black" style={{ color: tooltip.nivel.color }}>
+                {tooltip.count}
+                <span className="text-xs font-normal text-zinc-500">/{capacidad}</span>
+              </div>
+              <div className="text-[10px] font-semibold" style={{ color: tooltip.nivel.color }}>
+                {tooltip.nivel.label}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Leyenda */}
+      <div className="flex flex-wrap gap-x-4 gap-y-1 pt-2 border-t border-border">
+        {[
+          { color: '#86efac', label: 'Libre (< 38%)' },
+          { color: '#22c55e', label: 'Moderado (38–62%)' },
+          { color: '#f59e0b', label: 'Concurrido (63–87%)' },
+          { color: '#ef4444', label: 'Muy concurrido (≥ 88%)' },
+        ].map(({ color, label }) => (
+          <div key={label} className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: color }} />
+            <span className="text-[10px] text-zinc-500">{label}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 const PLAN_COLORS = {
+  '1x/sem':       '#0891b2',
   '2x/sem':       '#2563eb',
   '3x/sem':       '#16a34a',
-  'Full':         '#dc2626',
+  '4x/sem':       '#d97706',
+  '5x/sem':       '#dc2626',
+  '6x/sem':       '#9333ea',
   'Personalizado':'#7c3aed',
   'Sin plan':     '#52525b',
 }
@@ -261,7 +438,17 @@ export default function AdminMetricas() {
         )}
       </div>
 
-      {/* Fila 5: Resumen general */}
+      {/* Fila 5: Ocupación por horario */}
+      <div className="bg-surface border border-border rounded-2xl p-5">
+        <SectionTitle>Ocupación por bloque horario</SectionTitle>
+        <GraficoOcupacion
+          porHora={data.ocupacionPorHora || []}
+          porDiaHora={data.ocupacionPorDiaHora || []}
+          capacidad={data.capacidadPorBloque || 16}
+        />
+      </div>
+
+      {/* Fila 6: Resumen general */}
       <div className="grid grid-cols-3 gap-3">
         <div className="bg-surface border border-border rounded-2xl p-4 text-center">
           <div className="text-2xl font-black text-foreground">{coaches}</div>

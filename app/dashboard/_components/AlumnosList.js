@@ -2,6 +2,7 @@
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { DIAS_POR_PLAN } from '@/lib/constants'
 import LoadingSpinner from '@/app/dashboard/_components/LoadingSpinner'
 import StatusBadge from '@/app/dashboard/_components/StatusBadge'
 
@@ -19,6 +20,7 @@ export default function AlumnosList({
   const [busqueda, setBusqueda]         = useState('')
   const [filtroEstado, setFiltroEstado] = useState('todos')
   const [filtroPlan,   setFiltroPlan]   = useState('todos')
+  const [filtroTipo,   setFiltroTipo]   = useState('todos')
   const [filtroCoach,  setFiltroCoach]  = useState('todos')
 
   const [menuAbierto, setMenuAbierto] = useState(null)
@@ -90,9 +92,21 @@ export default function AlumnosList({
     ])
 
     if (coaches.length === 0) setCoaches(freshCoaches)
-    setHorariosEditar(
-      (horariosRes.data || []).map(h => ({ ...h, _nuevo: false, _eliminar: false }))
-    )
+
+    const horariosExistentes = horariosRes.data || []
+    const tipoDefecto = (alumno.tipo_clase || 'grupal').toLowerCase()
+
+    if (horariosExistentes.length === 0 && alumno.plan) {
+      // Sin horarios aún → pre-llenar según plan y tipo_clase
+      const dias = DIAS_POR_PLAN[alumno.plan] || ['lunes']
+      setHorariosEditar(dias.map(dia => ({
+        dia, hora: '08:00', tipo: tipoDefecto,
+        coach_id: alumno.coach_id || null,
+        _nuevo: true, _eliminar: false,
+      })))
+    } else {
+      setHorariosEditar(horariosExistentes.map(h => ({ ...h, _nuevo: false, _eliminar: false })))
+    }
     setModalEditar(alumno)
   }
 
@@ -101,8 +115,9 @@ export default function AlumnosList({
   }
 
   function agregarHorario() {
+    const tipoDefecto = (formEditar.tipo_clase || 'grupal').toLowerCase()
     setHorariosEditar(prev => [...prev, {
-      dia: 'lunes', hora: '08:00', tipo: 'grupal',
+      dia: 'lunes', hora: '08:00', tipo: tipoDefecto,
       coach_id: formEditar.coach_id || null,
       _nuevo: true, _eliminar: false,
     }])
@@ -149,6 +164,7 @@ export default function AlumnosList({
         objetivos:             formEditar.objetivos,
         restricciones_medicas: formEditar.restricciones_medicas,
         plan:                  formEditar.plan,
+        tipo_clase:            formEditar.tipo_clase || null,
         coach_id:              formEditar.coach_id || null,
       })
       .eq('id', formEditar.id)
@@ -245,9 +261,10 @@ export default function AlumnosList({
       filtroEstado === 'todos'   ? true :
       filtroEstado === 'activos' ? a.activo :
       !a.activo
-    const matchPlan  = filtroPlan  === 'todos' || a.plan  === filtroPlan
-    const matchCoach = filtroCoach === 'todos' || a.coach_id === filtroCoach
-    return matchBusqueda && matchEstado && matchPlan && matchCoach
+    const matchPlan  = filtroPlan  === 'todos' || a.plan      === filtroPlan
+    const matchTipo  = filtroTipo  === 'todos' || (a.tipo_clase || 'Grupal') === filtroTipo
+    const matchCoach = filtroCoach === 'todos' || a.coach_id  === filtroCoach
+    return matchBusqueda && matchEstado && matchPlan && matchTipo && matchCoach
   })
 
   if (loading) return <LoadingSpinner />
@@ -288,7 +305,7 @@ export default function AlumnosList({
         />
 
         {/* Selects en grilla — 2 cols en móvil */}
-        <div className={`grid gap-2 ${!coachIdFiltro ? 'grid-cols-2 sm:grid-cols-3' : 'grid-cols-2'}`}>
+        <div className={`grid gap-2 grid-cols-2 ${!coachIdFiltro ? 'sm:grid-cols-4' : 'sm:grid-cols-3'}`}>
           <select
             value={filtroEstado}
             onChange={e => setFiltroEstado(e.target.value)}
@@ -300,14 +317,27 @@ export default function AlumnosList({
           </select>
 
           <select
+            value={filtroTipo}
+            onChange={e => setFiltroTipo(e.target.value)}
+            className="bg-surface border border-border text-foreground rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-600 transition-colors"
+          >
+            <option value="todos">Todos los tipos</option>
+            <option value="Grupal">Grupal</option>
+            <option value="Personalizado">Personalizado</option>
+          </select>
+
+          <select
             value={filtroPlan}
             onChange={e => setFiltroPlan(e.target.value)}
             className="bg-surface border border-border text-foreground rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-600 transition-colors"
           >
             <option value="todos">Todos los planes</option>
+            <option value="1x/sem">1x por semana</option>
             <option value="2x/sem">2x por semana</option>
             <option value="3x/sem">3x por semana</option>
-            <option value="Full">Full (5x/sem)</option>
+            <option value="4x/sem">4x por semana</option>
+            <option value="5x/sem">5x por semana</option>
+            <option value="6x/sem">6x por semana</option>
             <option value="Personalizado">Personalizado</option>
           </select>
 
@@ -328,13 +358,13 @@ export default function AlumnosList({
         </div>
 
         {/* Indicador de filtros activos */}
-        {(filtroEstado !== 'todos' || filtroPlan !== 'todos' || filtroCoach !== 'todos' || busqueda) && (
+        {(filtroEstado !== 'todos' || filtroPlan !== 'todos' || filtroTipo !== 'todos' || filtroCoach !== 'todos' || busqueda) && (
           <div className="flex items-center justify-between">
             <span className="text-[11px] text-zinc-500">
               {alumnosFiltrados.length} resultado{alumnosFiltrados.length !== 1 ? 's' : ''}
             </span>
             <button
-              onClick={() => { setBusqueda(''); setFiltroEstado('todos'); setFiltroPlan('todos'); setFiltroCoach('todos') }}
+              onClick={() => { setBusqueda(''); setFiltroEstado('todos'); setFiltroPlan('todos'); setFiltroTipo('todos'); setFiltroCoach('todos') }}
               className="text-[11px] text-red-500 hover:text-red-400 transition-colors"
             >
               Limpiar filtros ✕
@@ -375,14 +405,17 @@ export default function AlumnosList({
                   <div className="text-xs text-zinc-500 truncate">
                     <span className="hidden md:inline">{alumno.email}</span>
                     <span className="md:hidden">
-                      {alumno.plan}{alumno.coach?.nombre ? ` · ${alumno.coach.nombre.split(' ')[0]}` : ''}
+                      {alumno.tipo_clase || 'Grupal'} · {alumno.plan}{alumno.coach?.nombre ? ` · ${alumno.coach.nombre.split(' ')[0]}` : ''}
                     </span>
                   </div>
                 </div>
               </div>
 
               <div className="hidden md:block w-28 shrink-0 text-sm text-zinc-500">{alumno.rut || '—'}</div>
-              <div className="hidden md:block w-24 shrink-0 text-sm text-zinc-500">{alumno.plan}</div>
+              <div className="hidden md:block w-24 shrink-0 text-sm text-zinc-500">
+                <div>{alumno.tipo_clase || 'Grupal'}</div>
+                <div className="text-[11px] text-zinc-600">{alumno.plan}</div>
+              </div>
               <div className="hidden md:block w-28 shrink-0 text-sm text-zinc-500">{alumno.coach?.nombre || '—'}</div>
 
               <div className="shrink-0 w-20 flex justify-end md:justify-start">
@@ -545,19 +578,45 @@ export default function AlumnosList({
               <div>
                 <div className="text-[10px] text-zinc-500 uppercase tracking-widest mb-3">Información del gimnasio</div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+
+                  {/* Tipo de clase */}
                   <div>
-                    <label className="text-[10px] text-zinc-600 uppercase tracking-wider block mb-1">Plan</label>
+                    <label className="text-[10px] text-zinc-600 uppercase tracking-wider block mb-1">Tipo de clase</label>
+                    <div className="flex gap-2">
+                      {['Grupal', 'Personalizado'].map(t => (
+                        <button
+                          key={t}
+                          type="button"
+                          onClick={() => setFormEditar(f => ({ ...f, tipo_clase: t }))}
+                          className={`flex-1 py-2 rounded-lg border text-xs font-medium transition-all ${
+                            (formEditar.tipo_clase || 'Grupal') === t
+                              ? 'bg-red-600/15 border-red-600/40 text-red-500'
+                              : 'border-border text-zinc-500 hover:text-foreground bg-raised'
+                          }`}
+                        >
+                          {t}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Frecuencia */}
+                  <div>
+                    <label className="text-[10px] text-zinc-600 uppercase tracking-wider block mb-1">Días por semana</label>
                     <select
                       value={formEditar.plan || ''}
                       onChange={e => setFormEditar(f => ({ ...f, plan: e.target.value }))}
                       className="w-full bg-raised border border-border text-foreground rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-600"
                     >
-                      <option value="2x/sem">2x por semana</option>
-                      <option value="3x/sem">3x por semana</option>
-                      <option value="Full">Full (5x/sem)</option>
-                      <option value="Personalizado">Personalizado</option>
+                      <option value="1x/sem">1 día</option>
+                      <option value="2x/sem">2 días</option>
+                      <option value="3x/sem">3 días</option>
+                      <option value="4x/sem">4 días</option>
+                      <option value="5x/sem">5 días</option>
+                      <option value="6x/sem">6 días</option>
                     </select>
                   </div>
+
                   <div>
                     <label className="text-[10px] text-zinc-600 uppercase tracking-wider block mb-1">Coach asignado</label>
                     <select

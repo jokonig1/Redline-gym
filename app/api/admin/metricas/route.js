@@ -31,7 +31,7 @@ export async function GET() {
     { data: alumnosNuevosMes },
   ] = await Promise.all([
     supabaseAdmin.from('alumnos').select('id, activo, plan, coach_id, created_at'),
-    supabaseAdmin.from('alumno_horarios').select('alumno_id').eq('activo', true),
+    supabaseAdmin.from('alumno_horarios').select('alumno_id, dia, hora').eq('activo', true),
     supabaseAdmin.from('alumno_horarios_excepciones')
       .select('cancelado, fecha_nueva')
       .gte('fecha_original', semanaInicio)
@@ -59,8 +59,33 @@ export async function GET() {
   const conHorario = new Set((horarios || []).map(h => h.alumno_id))
   const alumnosConHorario = activos.filter(a => conHorario.has(a.id)).length
 
+  // Ocupación por horario (hora + día) — solo alumnos activos
+  const alumnosActivosIds = new Set(activos.map(a => a.id))
+  const horariosActivos   = (horarios || []).filter(h => alumnosActivosIds.has(h.alumno_id))
+
+  const porHora = {}
+  const porDiaHora = {}
+  horariosActivos.forEach(h => {
+    const hora = h.hora?.slice(0, 5)
+    if (!hora) return
+    porHora[hora] = (porHora[hora] || 0) + 1
+    const key = `${h.dia}|${hora}`
+    porDiaHora[key] = (porDiaHora[key] || 0) + 1
+  })
+
+  const ocupacionPorHora = Object.entries(porHora)
+    .map(([hora, count]) => ({ hora, count }))
+    .sort((a, b) => a.hora.localeCompare(b.hora))
+
+  const ocupacionPorDiaHora = Object.entries(porDiaHora)
+    .map(([key, count]) => {
+      const [dia, hora] = key.split('|')
+      return { dia, hora, count }
+    })
+    .sort((a, b) => a.hora.localeCompare(b.hora) || a.dia.localeCompare(b.dia))
+
   // Por plan
-  const PLANES = ['2x/sem', '3x/sem', 'Full', 'Personalizado']
+  const PLANES = ['1x/sem', '2x/sem', '3x/sem', '4x/sem', '5x/sem', '6x/sem', 'Personalizado']
   const porPlan = {}
   PLANES.forEach(p => { porPlan[p] = 0 })
   activos.forEach(a => {
@@ -104,7 +129,10 @@ export async function GET() {
     excepciones: { cancelaciones, reagendamientos, total: cancelaciones + reagendamientos },
     porPlan:     Object.entries(porPlan).map(([plan, count]) => ({ plan, count })),
     porCoach:    porCoachArr,
-    sesionesRutina: (sesiones || []).length,
-    coaches:     (coaches || []).length,
+    sesionesRutina:       (sesiones || []).length,
+    coaches:              (coaches || []).length,
+    ocupacionPorHora,
+    ocupacionPorDiaHora,
+    capacidadPorBloque:   16,
   })
 }

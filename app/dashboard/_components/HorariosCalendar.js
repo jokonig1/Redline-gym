@@ -1,5 +1,5 @@
 'use client'
-import { useState, Fragment, useRef, useEffect } from 'react'
+import { useState, Fragment, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { DIAS, DIAS_LABEL, DIAS_LABEL_LARGO, HORAS, COLORES_COACH } from '@/lib/constants'
@@ -35,9 +35,9 @@ export default function HorariosCalendar({
   // Filtro por coach
   const [coachFiltro, setCoachFiltro] = useState(soloEditarCoachId || null)
 
-  // Modal mover
-  const menuRef = useRef(null)
-  const [menuSlotKey,  setMenuSlotKey]  = useState(null)
+  // Modal acciones rápidas (Ver perfil / Mover clase)
+  const [slotAccion,   setSlotAccion]   = useState(null)
+
   const [modalSlot,    setModalSlot]    = useState(null)
   const [moverForm,    setMoverForm]    = useState({ fecha_nueva:'', hora_nueva:'', motivo:'' })
   const [guardando,    setGuardando]    = useState(false)
@@ -55,13 +55,22 @@ export default function HorariosCalendar({
   const [capWarningExtra,setCapWarningExtra]= useState(false)
   const [exitoExtra,     setExitoExtra]     = useState(false)
 
-  useEffect(() => {
-    function onClick(e) {
-      if (menuRef.current && !menuRef.current.contains(e.target)) setMenuSlotKey(null)
+  function abrirAcciones(slot) {
+    setSlotAccion(slot)
+  }
+
+  function irAPerfil() {
+    if (slotAccion?.alumno?.id) {
+      router.push(`/dashboard/admin/alumnos/${slotAccion.alumno.id}`)
     }
-    document.addEventListener('mousedown', onClick)
-    return () => document.removeEventListener('mousedown', onClick)
-  }, [])
+    setSlotAccion(null)
+  }
+
+  function irAMover() {
+    const slot = slotAccion
+    setSlotAccion(null)
+    abrirMover(slot)
+  }
 
   // ── Datos ───────────────────────────────────────────────────────────────────
 
@@ -115,7 +124,7 @@ export default function HorariosCalendar({
 
   function abrirMover(slot) {
     const exc = slot.excepcion
-    setModalSlot(slot); setMenuSlotKey(null); setErrorGuardar('')
+    setModalSlot(slot); setErrorGuardar('')
     setMoverForm({
       fecha_nueva: exc?.fecha_nueva || '',
       hora_nueva:  exc?.hora_nueva?.slice(0,5) || slot.hora?.slice(0,5) || '',
@@ -214,8 +223,7 @@ export default function HorariosCalendar({
 
   const tarjetaProps = {
     coaches, soloEditarCoachId,
-    onAbrirModal: abrirMover,
-    onVerPerfil: id => router.push(`/dashboard/admin/alumnos/${id}`),
+    onAbrirAcciones: abrirAcciones,
   }
 
   // ── Render ──────────────────────────────────────────────────────────────────
@@ -331,9 +339,6 @@ export default function HorariosCalendar({
                         <TarjetaSemanal
                           key={`${slot.id}-${slot.fechaStr}`}
                           slot={slot}
-                          menuSlotKey={menuSlotKey}
-                          setMenuSlotKey={setMenuSlotKey}
-                          menuRef={menuRef}
                           {...tarjetaProps}
                         />
                       ))}
@@ -470,15 +475,14 @@ export default function HorariosCalendar({
                     }`}>{d}</div>
                     <div className="space-y-px flex-1 min-h-0 overflow-hidden">
                       {slots.slice(0, 2).map(slot => {
-                        const color    = resolveColor(slot, coaches)
-                        const editable = !soloEditarCoachId || slot.coach_id === soloEditarCoachId
+                        const color = resolveColor(slot, coaches)
                         return (
                           <div key={slot.id}
                             onClick={e => {
                               e.stopPropagation()
-                              if (editable) abrirMover({ ...slot, fechaStr, excepcion: getExcepcion(slot.id, fechaStr) })
+                              abrirAcciones({ ...slot, fechaStr, excepcion: getExcepcion(slot.id, fechaStr) })
                             }}
-                            className={`text-[7px] px-0.5 py-px rounded truncate leading-tight ${editable ? 'cursor-pointer hover:brightness-125' : 'cursor-default'}`}
+                            className="text-[7px] px-0.5 py-px rounded truncate leading-tight cursor-pointer hover:brightness-125 active:scale-95"
                             style={{ background: color.bg, color: color.border }}
                           >
                             {slot.alumno?.nombre?.split(' ')[0]}
@@ -503,6 +507,80 @@ export default function HorariosCalendar({
         className="fixed bottom-6 right-6 z-20 w-12 h-12 rounded-full bg-red-600 hover:bg-red-700 text-white shadow-lg hover:shadow-xl transition-all flex items-center justify-center text-2xl font-light active:scale-95">
         +
       </button>
+
+      {/* ── Modal acciones rápidas ── */}
+      {slotAccion && (
+        <div
+          className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
+          onClick={() => setSlotAccion(null)}
+        >
+          <div
+            className="bg-surface border border-border-strong rounded-t-2xl sm:rounded-2xl w-full sm:max-w-sm shadow-2xl"
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Info del slot */}
+            <div className="px-5 pt-5 pb-4 border-b border-border">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-red-900/30 flex items-center justify-center text-sm font-black text-red-400 shrink-0">
+                  {slotAccion.alumno?.nombre?.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                </div>
+                <div>
+                  <div className="text-sm font-bold text-foreground">{slotAccion.alumno?.nombre}</div>
+                  <div className="text-xs text-zinc-500 mt-0.5">
+                    {slotAccion.hora?.slice(0, 5)}
+                    {' · '}
+                    <span className="capitalize">{slotAccion.dia}</span>
+                    {' · '}
+                    {slotAccion.tipo === 'grupal' ? 'Grupal' : 'Personalizado'}
+                    {slotAccion._movida && <span className="text-amber-500"> · Reagendada</span>}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Acciones */}
+            <div className="p-3 space-y-1.5">
+              <button
+                onClick={irAPerfil}
+                className="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl hover:bg-hover-md transition-colors text-left"
+              >
+                <span className="text-lg">◉</span>
+                <div>
+                  <div className="text-sm font-semibold text-foreground">Ver perfil</div>
+                  <div className="text-[11px] text-zinc-500">Historial, datos y rutinas del alumno</div>
+                </div>
+                <span className="ml-auto text-zinc-400">›</span>
+              </button>
+
+              {(!soloEditarCoachId || slotAccion.coach_id === soloEditarCoachId) && (
+                <button
+                  onClick={irAMover}
+                  className="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl hover:bg-hover-md transition-colors text-left"
+                >
+                  <span className="text-lg">↗</span>
+                  <div>
+                    <div className="text-sm font-semibold text-foreground">
+                      {slotAccion.excepcion ? 'Editar cambio' : 'Mover clase'}
+                    </div>
+                    <div className="text-[11px] text-zinc-500">Cambiar fecha u hora para esta semana</div>
+                  </div>
+                  <span className="ml-auto text-zinc-400">›</span>
+                </button>
+              )}
+            </div>
+
+            {/* Cancelar */}
+            <div className="px-3 pb-4">
+              <button
+                onClick={() => setSlotAccion(null)}
+                className="w-full py-3 rounded-xl border border-border-strong text-zinc-500 hover:text-foreground text-sm font-medium transition-all"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Modal mover ── */}
       {modalSlot && (
@@ -624,8 +702,12 @@ export default function HorariosCalendar({
                       <label className="text-[10px] text-zinc-500 uppercase tracking-wider block mb-1.5">Plan</label>
                       <select value={formExtra.plan} onChange={e => setFormExtra(f => ({ ...f, plan: e.target.value }))}
                         className="w-full bg-raised border border-border text-foreground rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-red-600">
+                        <option value="1x/sem">1x/sem</option>
                         <option value="2x/sem">2x/sem</option>
                         <option value="3x/sem">3x/sem</option>
+                        <option value="4x/sem">4x/sem</option>
+                        <option value="5x/sem">5x/sem</option>
+                        <option value="6x/sem">6x/sem</option>
                         <option value="Full">Full</option>
                         <option value="Personalizado">Personalizado</option>
                       </select>

@@ -18,8 +18,23 @@ export default function DashboardLayout({ children }) {
     async function getProfile() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push('/login'); return }
-      const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single()
-      setProfile(data)
+
+      const { data: prof } = await supabase.from('profiles').select('*').eq('id', user.id).single()
+
+      // Si es alumno, completar el nombre desde la tabla alumnos
+      if (prof?.rol === 'alumno' && user.email) {
+        const res = await fetch(`/api/alumno/perfil?email=${encodeURIComponent(user.email)}`)
+        if (res.ok) {
+          const alumnoData = await res.json()
+          if (alumnoData?.nombre) {
+            setProfile({ ...prof, nombre: alumnoData.nombre })
+            setLoading(false)
+            return
+          }
+        }
+      }
+
+      setProfile(prof)
       setLoading(false)
     }
     getProfile()
@@ -59,7 +74,7 @@ export default function DashboardLayout({ children }) {
       { label: 'Mi Progreso', icon: '◈', href: '/dashboard/alumno' },
       { label: 'Mis Clases',  icon: '▦', href: '/dashboard/alumno/clases' },
       { label: 'Mi Rutina',   icon: '✓', href: '/dashboard/alumno/rutina' },
-      { label: 'Mi Perfil',   icon: '◉', href: '/dashboard/alumno/perfil' },
+      { label: 'Mi Perfil',   icon: '●', href: '/dashboard/alumno/perfil' },
     ],
   }
 

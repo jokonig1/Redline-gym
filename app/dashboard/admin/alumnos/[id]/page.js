@@ -240,6 +240,7 @@ export default function DetalleAlumno() {
       restricciones_medicas: form.restricciones_medicas,
       plan:                  form.plan,
       coach_id:              form.coach_id,
+      vencimiento_plan:      form.vencimiento_plan || null,
     }).eq('id', id)
     setSaving(false)
     if (error) { setErrorSave(error.message); return }
@@ -328,6 +329,10 @@ export default function DetalleAlumno() {
       {/* Info gimnasio */}
       <div className="bg-surface border border-border rounded-xl p-5 mb-4">
         <div className="text-xs text-zinc-500 uppercase tracking-widest mb-4">Información del gimnasio</div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+          <Field label="Plan" field="plan" {...fieldProps} />
+          <Field label="Vencimiento del plan" field="vencimiento_plan" type="date" {...fieldProps} />
+        </div>
         <div className="grid grid-cols-1 gap-4">
           <div>
             <label className="text-[10px] text-zinc-500 uppercase tracking-widest block mb-1">Objetivos</label>

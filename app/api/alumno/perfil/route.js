@@ -11,8 +11,8 @@ export async function GET(req) {
 
   const { data } = await supabaseAdmin
     .from('alumnos')
-    .select('id, nombre, rut, email, telefono, plan, coach_id, coach:coach_id(id, nombre)')
-    .eq('email', email)
+    .select('id, nombre, rut, email, telefono, plan, activo, created_at, vencimiento_plan, coach_id, coach:coach_id(id, nombre)')
+    .ilike('email', email.trim())  // case-insensitive — evita fallos por mayúsculas/minúsculas
     .maybeSingle()
 
   return Response.json(data)
@@ -30,7 +30,7 @@ export async function PUT(req) {
   const { data, error } = await supabaseAdmin
     .from('alumnos')
     .update({ coach_id: coach_id || null })
-    .eq('email', email)
+    .ilike('email', email.trim())
     .select('id, nombre, coach_id, coach:coach_id(id, nombre)')
     .single()
 
