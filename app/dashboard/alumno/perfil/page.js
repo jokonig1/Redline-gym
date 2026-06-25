@@ -31,12 +31,24 @@ export default function AlumnoPerfil() {
     init()
   }, [])
 
+  const [pesoActual, setPesoActual] = useState(null)
+
   useEffect(() => {
     if (!email) return
     async function load() {
       const alumnoRes  = await fetch(`/api/alumno/perfil?email=${encodeURIComponent(email)}`)
       const alumnoData = alumnoRes.ok ? await alumnoRes.json() : null
       setAlumno(alumnoData)
+
+      // Cargar el peso más reciente
+      if (alumnoData?.id) {
+        const pesoRes = await fetch(`/api/alumno/peso?alumno_id=${alumnoData.id}`)
+        if (pesoRes.ok) {
+          const pesos = await pesoRes.json()
+          if (pesos.length > 0) setPesoActual(pesos[pesos.length - 1])
+        }
+      }
+
       setLoading(false)
     }
     load()
@@ -146,14 +158,16 @@ export default function AlumnoPerfil() {
       {/* Datos personales */}
       <div className="bg-surface border border-border rounded-xl p-5">
         <div className="text-xs text-zinc-500 uppercase tracking-widest mb-4">Mis datos</div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-4">
           {[
-            { label: 'Nombre',           value: alumno.nombre },
-            { label: 'RUT',              value: alumno.rut },
-            { label: 'Teléfono',         value: alumno.telefono },
-            { label: 'Correo',           value: alumno.email },
-          ].map(({ label, value }) => (
-            <div key={label}>
+            { label: 'Nombre',       value: alumno.nombre,                             cols: 2 },
+            { label: 'RUT',          value: alumno.rut },
+            { label: 'Teléfono',     value: alumno.telefono },
+            { label: 'Correo',       value: alumno.email,                              cols: 2 },
+            { label: 'Estatura',     value: alumno.altura_cm ? `${alumno.altura_cm} cm` : null },
+            { label: 'Peso actual',  value: pesoActual ? `${pesoActual.peso_kg} kg` : null },
+          ].map(({ label, value, cols }) => (
+            <div key={label} className={cols === 2 ? 'col-span-2' : ''}>
               <div className="text-[10px] text-zinc-500 uppercase tracking-wider mb-0.5">{label}</div>
               <div className="text-sm text-foreground">{value || <span className="text-zinc-500">—</span>}</div>
             </div>

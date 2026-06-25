@@ -11,7 +11,7 @@ export async function GET(req) {
 
   const { data } = await supabaseAdmin
     .from('alumnos')
-    .select('id, nombre, rut, email, telefono, plan, activo, created_at, vencimiento_plan, coach_id, coach:coach_id(id, nombre)')
+    .select('id, nombre, rut, email, telefono, plan, activo, created_at, vencimiento_plan, altura_cm, coach_id, coach:coach_id(id, nombre)')
     .ilike('email', email.trim())  // case-insensitive — evita fallos por mayúsculas/minúsculas
     .maybeSingle()
 

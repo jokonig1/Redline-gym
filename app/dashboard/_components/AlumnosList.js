@@ -379,7 +379,7 @@ export default function AlumnosList({
         <div className="hidden md:flex items-center gap-4 px-5 py-3 border-b border-border">
           <div className="flex-1 text-[10px] text-zinc-500 uppercase tracking-widest">Nombre</div>
           <div className="w-28 shrink-0 text-[10px] text-zinc-500 uppercase tracking-widest">RUT</div>
-          <div className="w-24 shrink-0 text-[10px] text-zinc-500 uppercase tracking-widest">Plan</div>
+          <div className="w-32 shrink-0 text-[10px] text-zinc-500 uppercase tracking-widest">Plan</div>
           <div className="w-28 shrink-0 text-[10px] text-zinc-500 uppercase tracking-widest">Coach</div>
           <div className="w-20 shrink-0 text-[10px] text-zinc-500 uppercase tracking-widest">Estado</div>
           <div className="w-8 shrink-0" />
@@ -405,15 +405,15 @@ export default function AlumnosList({
                   <div className="text-xs text-zinc-500 truncate">
                     <span className="hidden md:inline">{alumno.email}</span>
                     <span className="md:hidden">
-                      {alumno.tipo_clase || 'Semi Personalizado'} · {alumno.plan}{alumno.coach?.nombre ? ` · ${alumno.coach.nombre.split(' ')[0]}` : ''}
+                      {alumno.tipo_clase?.toLowerCase() === 'personalizado' ? 'Personalizado' : 'Semi Personalizado'} · {alumno.plan}{alumno.coach?.nombre ? ` · ${alumno.coach.nombre.split(' ')[0]}` : ''}
                     </span>
                   </div>
                 </div>
               </div>
 
               <div className="hidden md:block w-28 shrink-0 text-sm text-zinc-500">{alumno.rut || '—'}</div>
-              <div className="hidden md:block w-24 shrink-0 text-sm text-zinc-500">
-                <div>{alumno.tipo_clase || 'Semi Personalizado'}</div>
+              <div className="hidden md:block w-32 shrink-0 text-sm text-zinc-500">
+                <div className="truncate">{alumno.tipo_clase?.toLowerCase() === 'personalizado' ? 'Personalizado' : 'Semi Personal.'}</div>
                 <div className="text-[11px] text-zinc-600">{alumno.plan}</div>
               </div>
               <div className="hidden md:block w-28 shrink-0 text-sm text-zinc-500">{alumno.coach?.nombre || '—'}</div>
