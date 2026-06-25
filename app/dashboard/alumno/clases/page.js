@@ -176,7 +176,7 @@ export default function MisClases() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-medium text-foreground">
-                        {slot.tipo === 'grupal' ? 'Clase grupal' : 'Clase personalizada'}
+                        {slot.tipo === 'semipersonalizado' ? 'Semi Personalizado' : 'Personalizado'}
                         {slot.tipo_slot === 'movida' && (
                           <span className="ml-1.5 text-[10px] text-amber-500 font-normal">↗ reagendada</span>
                         )}
@@ -186,9 +186,9 @@ export default function MisClases() {
                       )}
                     </div>
                     <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
-                      slot.tipo === 'grupal' ? 'bg-blue-500/10 text-blue-500' : 'bg-purple-500/10 text-purple-500'
+                      slot.tipo === 'semipersonalizado' ? 'bg-blue-500/10 text-blue-500' : 'bg-purple-500/10 text-purple-500'
                     }`}>
-                      {slot.tipo === 'grupal' ? 'Grupal' : 'Personal'}
+                      {slot.tipo === 'semipersonalizado' ? 'Semi' : 'Personal'}
                     </span>
                   </div>
                 ))}
@@ -219,7 +219,7 @@ export default function MisClases() {
                   <div key={slot.id} className="flex items-center gap-3 px-4 py-3 border-t border-border first:border-t-0">
                     <div className="text-sm font-bold text-red-500 w-12 shrink-0">{slot.hora?.slice(0,5)}</div>
                     <div className="flex-1 text-sm text-foreground">
-                      {slot.tipo === 'grupal' ? 'Clase grupal' : 'Clase personalizada'}
+                      {slot.tipo === 'semipersonalizado' ? 'Semi Personalizado' : 'Personalizado'}
                     </div>
                     {slot.coach?.nombre && (
                       <div className="text-[11px] text-zinc-500">{slot.coach.nombre}</div>

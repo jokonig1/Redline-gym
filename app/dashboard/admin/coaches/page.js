@@ -23,21 +23,17 @@ export default function CoachesPage() {
   useEffect(() => {
     const supabase = createClient()
     async function load() {
-      const { data: lista } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('rol', 'coach')
-        .order('created_at', { ascending: false })
+      // Usa la API (supabaseAdmin) para incluir admins que también actúan como coach
+      const [coachesRes, alumnosRes] = await Promise.all([
+        fetch('/api/coaches'),
+        supabase.from('alumnos').select('coach_id').eq('activo', true),
+      ])
 
-      if (!lista) { setLoading(false); return }
-
-      const { data: alumnosActivos } = await supabase
-        .from('alumnos')
-        .select('coach_id')
-        .eq('activo', true)
+      const lista = coachesRes.ok ? await coachesRes.json() : []
+      if (!lista.length) { setLoading(false); return }
 
       const countPerCoach = {}
-      for (const a of alumnosActivos || []) {
+      for (const a of alumnosRes.data || []) {
         if (a.coach_id) countPerCoach[a.coach_id] = (countPerCoach[a.coach_id] || 0) + 1
       }
 

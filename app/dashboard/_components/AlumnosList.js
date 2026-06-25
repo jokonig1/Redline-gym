@@ -94,7 +94,7 @@ export default function AlumnosList({
     if (coaches.length === 0) setCoaches(freshCoaches)
 
     const horariosExistentes = horariosRes.data || []
-    const tipoDefecto = (alumno.tipo_clase || 'grupal').toLowerCase()
+    const tipoDefecto = (alumno.tipo_clase || '').toLowerCase() === 'personalizado' ? 'personalizado' : 'semipersonalizado'
 
     if (horariosExistentes.length === 0 && alumno.plan) {
       // Sin horarios aún → pre-llenar según plan y tipo_clase
@@ -115,7 +115,7 @@ export default function AlumnosList({
   }
 
   function agregarHorario() {
-    const tipoDefecto = (formEditar.tipo_clase || 'grupal').toLowerCase()
+    const tipoDefecto = (formEditar.tipo_clase || '').toLowerCase() === 'personalizado' ? 'personalizado' : 'semipersonalizado'
     setHorariosEditar(prev => [...prev, {
       dia: 'lunes', hora: '08:00', tipo: tipoDefecto,
       coach_id: formEditar.coach_id || null,
@@ -262,7 +262,7 @@ export default function AlumnosList({
       filtroEstado === 'activos' ? a.activo :
       !a.activo
     const matchPlan  = filtroPlan  === 'todos' || a.plan      === filtroPlan
-    const matchTipo  = filtroTipo  === 'todos' || (a.tipo_clase || 'Grupal') === filtroTipo
+    const matchTipo  = filtroTipo  === 'todos' || (a.tipo_clase || 'Semi Personalizado') === filtroTipo
     const matchCoach = filtroCoach === 'todos' || a.coach_id  === filtroCoach
     return matchBusqueda && matchEstado && matchPlan && matchTipo && matchCoach
   })
@@ -322,7 +322,7 @@ export default function AlumnosList({
             className="bg-surface border border-border text-foreground rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-600 transition-colors"
           >
             <option value="todos">Todos los tipos</option>
-            <option value="Grupal">Grupal</option>
+            <option value="Semi Personalizado">Semi Personalizado</option>
             <option value="Personalizado">Personalizado</option>
           </select>
 
@@ -405,7 +405,7 @@ export default function AlumnosList({
                   <div className="text-xs text-zinc-500 truncate">
                     <span className="hidden md:inline">{alumno.email}</span>
                     <span className="md:hidden">
-                      {alumno.tipo_clase || 'Grupal'} · {alumno.plan}{alumno.coach?.nombre ? ` · ${alumno.coach.nombre.split(' ')[0]}` : ''}
+                      {alumno.tipo_clase || 'Semi Personalizado'} · {alumno.plan}{alumno.coach?.nombre ? ` · ${alumno.coach.nombre.split(' ')[0]}` : ''}
                     </span>
                   </div>
                 </div>
@@ -413,7 +413,7 @@ export default function AlumnosList({
 
               <div className="hidden md:block w-28 shrink-0 text-sm text-zinc-500">{alumno.rut || '—'}</div>
               <div className="hidden md:block w-24 shrink-0 text-sm text-zinc-500">
-                <div>{alumno.tipo_clase || 'Grupal'}</div>
+                <div>{alumno.tipo_clase || 'Semi Personalizado'}</div>
                 <div className="text-[11px] text-zinc-600">{alumno.plan}</div>
               </div>
               <div className="hidden md:block w-28 shrink-0 text-sm text-zinc-500">{alumno.coach?.nombre || '—'}</div>
@@ -583,13 +583,13 @@ export default function AlumnosList({
                   <div>
                     <label className="text-[10px] text-zinc-600 uppercase tracking-wider block mb-1">Tipo de clase</label>
                     <div className="flex gap-2">
-                      {['Grupal', 'Personalizado'].map(t => (
+                      {['Personalizado', 'Semi Personalizado'].map(t => (
                         <button
                           key={t}
                           type="button"
                           onClick={() => setFormEditar(f => ({ ...f, tipo_clase: t }))}
                           className={`flex-1 py-2 rounded-lg border text-xs font-medium transition-all ${
-                            (formEditar.tipo_clase || 'Grupal') === t
+                            (formEditar.tipo_clase || 'Semi Personalizado') === t
                               ? 'bg-red-600/15 border-red-600/40 text-red-500'
                               : 'border-border text-zinc-500 hover:text-foreground bg-raised'
                           }`}
@@ -688,7 +688,7 @@ export default function AlumnosList({
                         </div>
                         <select value={h.tipo} disabled={h._eliminar} onChange={e => setHorario(idx, 'tipo', e.target.value)}
                           className="col-span-2 sm:col-span-1 bg-raised border border-border text-foreground rounded-lg px-2 py-2 text-sm focus:outline-none focus:border-red-600 disabled:text-zinc-500">
-                          <option value="grupal">Grupal</option>
+                          <option value="semipersonalizado">Semi Personalizado</option>
                           <option value="personalizado">Personalizado</option>
                         </select>
                         {/* Delete en desktop (col 4) */}

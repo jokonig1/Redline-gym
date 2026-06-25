@@ -18,19 +18,23 @@ function Ring({ pct, color, size = 88, stroke = 9 }) {
 }
 
 function StatCard({ tag, label, value, sub, color = '#ef4444', note }) {
+  const strLen   = String(value).length
+  const fontSize = strLen > 10 ? 'text-xl' : strLen > 7 ? 'text-2xl' : 'text-3xl'
   return (
-    <div className="bg-surface border border-border rounded-2xl p-5 flex flex-col gap-1"
+    <div className="bg-surface border border-border rounded-2xl p-4 sm:p-5 flex flex-col justify-between h-36"
       style={{ borderTop: `2px solid ${color}` }}>
-      <div className="flex items-center justify-between mb-2">
+      <div className="flex items-center justify-between">
         <span className="text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full"
           style={{ background: `${color}20`, color }}>
           {tag}
         </span>
         {note && <span className="text-[10px] text-zinc-600">{note}</span>}
       </div>
-      <div className="text-3xl font-black leading-none" style={{ color }}>{value}</div>
-      <div className="text-xs text-zinc-500 mt-1">{label}</div>
-      {sub && <div className="text-[10px] text-zinc-600">{sub}</div>}
+      <div className={`${fontSize} font-black leading-tight`} style={{ color }}>{value}</div>
+      <div>
+        <div className="text-xs text-zinc-500">{label}</div>
+        {sub && <div className="text-[10px] text-zinc-600 mt-0.5">{sub}</div>}
+      </div>
     </div>
   )
 }
@@ -110,7 +114,7 @@ function GraficoOcupacion({ porHora, porDiaHora, capacidad }) {
           className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${
             filtroDia === null ? 'bg-red-600 text-white' : 'text-zinc-500 hover:text-foreground hover:bg-hover-md'
           }`}>
-          Todos
+          Promedio
         </button>
         {DIAS_ORDER.map(dia => {
           if (!porDiaHora.some(d => d.dia === dia)) return null
@@ -259,7 +263,13 @@ export default function AdminMetricas() {
   if (loading) return <LoadingSpinner />
   if (error)   return <div className="text-red-400 text-sm">{error}</div>
 
-  const { alumnos, asistencia, excepciones, porPlan, porCoach, sesionesRutina, coaches, semana } = data
+  const { alumnos, asistencia, excepciones, porPlan, porCoach, sesionesRutina, coaches, semana,
+          clasesEstaSemana, ingresosMes, ingresosMesAnterior } = data
+
+  function fmtPesos(n) {
+    if (!n) return '$0'
+    return '$' + Math.round(n).toLocaleString('es-CL')
+  }
   const capacidadMax  = data.capacidadMax ?? 100
   const tasaOcupacion = Math.round(alumnos.activos / capacidadMax * 100)
   const maxPlan  = Math.max(...porPlan.map(p => p.count), 1)
@@ -292,12 +302,47 @@ export default function AdminMetricas() {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
         <StatCard tag="Alumnos" label="Alumnos activos" value={alumnos.activos} color="#22c55e"
           sub={`${alumnos.inactivos} inactivos`} />
-        <StatCard tag="Rutinas" label="Sesiones registradas esta semana" value={sesionesRutina} color="#a78bfa"
-          note="semana" />
-        <StatCard tag="Cancelaciones" label="Cancelaciones esta semana" value={excepciones.cancelaciones}
-          color={excepciones.cancelaciones > 3 ? '#f87171' : '#71717a'}
-          sub={`${excepciones.reagendamientos} reagendadas`} />
         <StatCard tag="Nuevos" label="Nuevos alumnos este mes" value={alumnos.nuevosEsteMes} color="#fbbf24" />
+        <StatCard tag="Clases" label="Clases realizadas esta semana" value={clasesEstaSemana ?? 0} color="#22d3ee"
+          note="semana" />
+        {/* Card ingresos con flecha comparativa */}
+        {(() => {
+          const diff   = ingresosMes - (ingresosMesAnterior || 0)
+          const pct    = ingresosMesAnterior > 0 ? Math.round(Math.abs(diff) / ingresosMesAnterior * 100) : null
+          const subido = diff > 0
+          const igual  = diff === 0 || pct === null
+          const color  = '#4ade80'
+          const strLen = fmtPesos(ingresosMes).length
+          const fontSize = strLen > 10 ? 'text-xl' : strLen > 7 ? 'text-2xl' : 'text-3xl'
+          return (
+            <div className="bg-surface border border-border rounded-2xl p-4 sm:p-5 flex flex-col justify-between h-36"
+              style={{ borderTop: `2px solid ${color}` }}>
+              {/* Tag */}
+              <div className="flex items-center justify-between">
+                <span className="text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full"
+                  style={{ background: `${color}20`, color }}>
+                  Ingresos
+                </span>
+                <span className="text-[10px] text-zinc-600">mes</span>
+              </div>
+              {/* Número */}
+              <div className={`${fontSize} font-black leading-tight`} style={{ color }}>
+                {fmtPesos(ingresosMes)}
+              </div>
+              {/* Comparación — misma altura que el sub de StatCard */}
+              <div>
+                {igual ? (
+                  <span className="text-[11px] text-zinc-500">Sin cambios vs mes anterior</span>
+                ) : (
+                  <span className={`text-[11px] font-bold flex items-center gap-1 ${subido ? 'text-green-400' : 'text-red-400'}`}>
+                    <span className="text-sm">{subido ? '↑' : '↓'}</span>
+                    {pct}% vs mes anterior
+                  </span>
+                )}
+              </div>
+            </div>
+          )
+        })()}
       </div>
 
       {/* Fila 2: Asistencia + Ocupación */}
@@ -448,23 +493,6 @@ export default function AdminMetricas() {
         />
       </div>
 
-      {/* Fila 6: Resumen general */}
-      <div className="grid grid-cols-3 gap-3">
-        <div className="bg-surface border border-border rounded-2xl p-4 text-center">
-          <div className="text-2xl font-black text-foreground">{coaches}</div>
-          <div className="text-xs text-zinc-500 mt-1">Coaches activos</div>
-        </div>
-        <div className="bg-surface border border-border rounded-2xl p-4 text-center">
-          <div className="text-2xl font-black text-foreground">{alumnos.total}</div>
-          <div className="text-xs text-zinc-500 mt-1">Alumnos totales</div>
-        </div>
-        <div className="bg-surface border border-border rounded-2xl p-4 text-center">
-          <div className="text-2xl font-black text-foreground">
-            {alumnos.activos > 0 ? `${Math.round(alumnos.activos / alumnos.total * 100)}%` : '—'}
-          </div>
-          <div className="text-xs text-zinc-500 mt-1">Retención</div>
-        </div>
-      </div>
 
     </div>
   )

@@ -158,7 +158,7 @@ export default function ModalClase({ slot, coachId, fecha, onClose }) {
             <div className="flex items-center gap-2 mt-0.5">
               <span className="text-xs text-zinc-500">{slot.hora?.slice(0, 5)}</span>
               <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-hover-md text-zinc-500 font-medium">
-                {slot.tipo === 'grupal' ? 'Grupal' : 'Personalizado'}
+                {slot.tipo === 'semipersonalizado' ? 'Semi Personalizado' : 'Personalizado'}
               </span>
             </div>
           </div>

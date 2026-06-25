@@ -20,7 +20,7 @@ export default function TarjetaSemanal({
       </div>
       <div className="hidden sm:block text-[7px] leading-tight mt-0.5 truncate"
         style={{ color: color.border + 'cc' }}>
-        {slot.tipo === 'grupal' ? 'Grupal' : 'Personal'}
+        {slot.tipo === 'semipersonalizado' ? 'Semi' : 'Personal'}
       </div>
     </div>
   )

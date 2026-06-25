@@ -141,7 +141,7 @@ export default function CoachInicio() {
                       <div className="flex-1 min-w-0">
                         <div className="text-sm font-bold text-foreground truncate">{slot.alumno?.nombre}</div>
                         <div className="text-xs text-zinc-500 mt-0.5">
-                          {slot.tipo === 'grupal' ? 'Grupal' : 'Personalizado'}
+                          {slot.tipo === 'semipersonalizado' ? 'Semi Personalizado' : 'Personalizado'}
                           {slot.tipo_slot === 'movida' && (
                             <span className="ml-1.5 text-amber-500">↗ movida</span>
                           )}

@@ -30,7 +30,7 @@ export async function GET() {
     { data: sesiones },
     { data: alumnosNuevosMes },
   ] = await Promise.all([
-    supabaseAdmin.from('alumnos').select('id, activo, plan, coach_id, created_at'),
+    supabaseAdmin.from('alumnos').select('id, activo, plan, tipo_clase, coach_id, created_at'),
     supabaseAdmin.from('alumno_horarios').select('alumno_id, dia, hora').eq('activo', true),
     supabaseAdmin.from('alumno_horarios_excepciones')
       .select('cancelado, fecha_nueva')
@@ -63,18 +63,29 @@ export async function GET() {
   const alumnosActivosIds = new Set(activos.map(a => a.id))
   const horariosActivos   = (horarios || []).filter(h => alumnosActivosIds.has(h.alumno_id))
 
-  const porHora = {}
+  // Agrupar por (dia, hora) para calcular promedio real por bloque
   const porDiaHora = {}
+  const porHoraAcum = {} // { hora: { total, dias: Set } }
+
   horariosActivos.forEach(h => {
     const hora = h.hora?.slice(0, 5)
-    if (!hora) return
-    porHora[hora] = (porHora[hora] || 0) + 1
-    const key = `${h.dia}|${hora}`
+    const dia  = h.dia
+    if (!hora || !dia) return
+
+    const key = `${dia}|${hora}`
     porDiaHora[key] = (porDiaHora[key] || 0) + 1
+
+    if (!porHoraAcum[hora]) porHoraAcum[hora] = { total: 0, dias: new Set() }
+    porHoraAcum[hora].total++
+    porHoraAcum[hora].dias.add(dia)
   })
 
-  const ocupacionPorHora = Object.entries(porHora)
-    .map(([hora, count]) => ({ hora, count }))
+  // Promedio por día: total alumnos ÷ cantidad de días en que existe ese bloque
+  const ocupacionPorHora = Object.entries(porHoraAcum)
+    .map(([hora, { total, dias }]) => ({
+      hora,
+      count: Math.round(total / dias.size), // promedio por día
+    }))
     .sort((a, b) => a.hora.localeCompare(b.hora))
 
   const ocupacionPorDiaHora = Object.entries(porDiaHora)
@@ -113,7 +124,25 @@ export async function GET() {
   const cancelaciones   = (excepciones || []).filter(e => e.cancelado).length
   const reagendamientos = (excepciones || []).filter(e => !e.cancelado && e.fecha_nueva).length
 
-  const CAPACIDAD_MAX = 100
+  // Ingresos estimados del mes — precios de la landing
+  const PRECIOS = {
+    personalizado:     { '2x/sem': 160000, '3x/sem': 190000, '4x/sem': 250000 },
+    semipersonalizado: { '2x/sem': 110000, '3x/sem': 130000, '4x/sem': 150000 },
+  }
+
+  function precioAlumno(a) {
+    const tipoKey = (a.tipo_clase || '').toLowerCase() === 'personalizado'
+      ? 'personalizado' : 'semipersonalizado'
+    return PRECIOS[tipoKey]?.[a.plan] || 0
+  }
+
+  const ingresosMes = activos.reduce((sum, a) => sum + precioAlumno(a), 0)
+
+  // Mes anterior: alumnos activos que ya existían antes del inicio de este mes
+  const activosMesAnterior = activos.filter(a => new Date(a.created_at) < inicioMes)
+  const ingresosMesAnterior = activosMesAnterior.reduce((sum, a) => sum + precioAlumno(a), 0)
+
+  const CAPACIDAD_MAX = 300
 
   return Response.json({
     semana:      { inicio: semanaInicio, fin: semanaFin },
@@ -129,6 +158,9 @@ export async function GET() {
     excepciones: { cancelaciones, reagendamientos, total: cancelaciones + reagendamientos },
     porPlan:     Object.entries(porPlan).map(([plan, count]) => ({ plan, count })),
     porCoach:    porCoachArr,
+    clasesEstaSemana:     asistieron,
+    ingresosMes,
+    ingresosMesAnterior,
     sesionesRutina:       (sesiones || []).length,
     coaches:              (coaches || []).length,
     ocupacionPorHora,

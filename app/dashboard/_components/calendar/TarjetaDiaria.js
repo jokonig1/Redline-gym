@@ -27,7 +27,7 @@ export default function TarjetaDiaria({
           {slot.alumno?.nombre}
         </div>
         <div className="text-[11px] truncate leading-tight mt-0.5" style={{ color: color.border + 'bb' }}>
-          {slot.tipo === 'grupal' ? 'Grupal' : 'Personalizado'}
+          {slot.tipo === 'semipersonalizado' ? 'Semi Personalizado' : 'Personalizado'}
           {slot.coach?.nombre && <span> · {slot.coach.nombre.split(' ')[0]}</span>}
           {slot._movida && <span style={{ color: '#f59e0b' }}> · Reagendada</span>}
         </div>

@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { DIAS, DIAS_LABEL_LARGO, HORAS } from '@/lib/constants'
 import LoadingSpinner from '@/app/dashboard/_components/LoadingSpinner'
 import StatusBadge from '@/app/dashboard/_components/StatusBadge'
 
@@ -204,17 +205,27 @@ export default function DetalleAlumno() {
   const [form,      setForm]      = useState({})
   const [errorSave, setErrorSave] = useState('')
   const [sesiones,  setSesiones]  = useState([])
+  const [horarios,  setHorarios]  = useState([]) // horarios actuales del alumno
+  const [horForm,   setHorForm]   = useState([]) // copia editable
 
   useEffect(() => {
     const supabase = createClient()
     async function fetchData() {
-      const [{ data: a }, sesRes] = await Promise.all([
+      const [{ data: a }, sesRes, { data: hrs }] = await Promise.all([
         supabase.from('alumnos').select('*, coach:coach_id(nombre)').eq('id', id).single(),
         fetch(`/api/sesiones-rutina?alumno_id=${id}`),
+        supabase.from('alumno_horarios')
+          .select('id, dia, hora, tipo, coach_id')
+          .eq('alumno_id', id)
+          .eq('activo', true)
+          .order('dia').order('hora'),
       ])
       setAlumno(a)
       setForm(a)
       setSesiones(sesRes.ok ? await sesRes.json() : [])
+      const h = (hrs || []).map(x => ({ ...x, _nuevo: false, _eliminar: false }))
+      setHorarios(h)
+      setHorForm(h)
       setLoading(false)
     }
     fetchData()
@@ -228,6 +239,8 @@ export default function DetalleAlumno() {
     setSaving(true)
     setErrorSave('')
     const supabase = createClient()
+
+    // Guardar datos del alumno
     const { error } = await supabase.from('alumnos').update({
       nombre:                form.nombre,
       rut:                   form.rut,
@@ -242,10 +255,66 @@ export default function DetalleAlumno() {
       coach_id:              form.coach_id,
       vencimiento_plan:      form.vencimiento_plan || null,
     }).eq('id', id)
+
+    if (error) { setErrorSave(error.message); setSaving(false); return }
+
+    // Guardar cambios de horarios
+    const aEliminar  = horForm.filter(h => h._eliminar && h.id)
+    const aNuevos    = horForm.filter(h => h._nuevo && !h._eliminar && h.dia && h.hora)
+    const aActualizar = horForm.filter(h => !h._nuevo && !h._eliminar && h.id)
+
+    await Promise.all([
+      ...aEliminar.map(h => supabase.from('alumno_horarios').update({ activo: false }).eq('id', h.id)),
+      aNuevos.length > 0
+        ? supabase.from('alumno_horarios').insert(aNuevos.map(h => ({
+            alumno_id: id,
+            coach_id:  form.coach_id || null,
+            dia:       h.dia,
+            hora:      h.hora,
+            tipo:      h.tipo,
+            activo:    true,
+          })))
+        : Promise.resolve(),
+      ...aActualizar.map(h =>
+        supabase.from('alumno_horarios')
+          .update({ dia: h.dia, hora: h.hora, tipo: h.tipo })
+          .eq('id', h.id)
+      ),
+    ])
+
+    // Recargar horarios frescos
+    const { data: hrsNew } = await supabase
+      .from('alumno_horarios')
+      .select('id, dia, hora, tipo, coach_id')
+      .eq('alumno_id', id).eq('activo', true)
+      .order('dia').order('hora')
+    const hFresh = (hrsNew || []).map(x => ({ ...x, _nuevo: false, _eliminar: false }))
+    setHorarios(hFresh)
+    setHorForm(hFresh)
+
     setSaving(false)
-    if (error) { setErrorSave(error.message); return }
     setEditando(false)
     setAlumno(form)
+  }
+
+  function setHorario(idx, field, value) {
+    setHorForm(prev => prev.map((h, i) => i === idx ? { ...h, [field]: value } : h))
+  }
+
+  function agregarHorario() {
+    setHorForm(prev => [...prev, {
+      dia: 'lunes', hora: '08:00',
+      tipo: form.tipo_clase?.toLowerCase() === 'personalizado' ? 'personalizado' : 'semipersonalizado',
+      coach_id: form.coach_id || null,
+      _nuevo: true, _eliminar: false,
+    }])
+  }
+
+  function marcarEliminar(idx) {
+    setHorForm(prev => prev.map((h, i) => {
+      if (i !== idx) return h
+      return h._nuevo ? null : { ...h, _eliminar: !h._eliminar }
+    }).filter(Boolean))
   }
 
   if (loading) return <LoadingSpinner />
@@ -361,6 +430,73 @@ export default function DetalleAlumno() {
             )}
           </div>
         </div>
+      </div>
+
+      {/* Horario semanal fijo */}
+      <div className="bg-surface border border-border rounded-xl p-5 mb-4">
+        <div className="flex items-center justify-between mb-4">
+          <div className="text-xs text-zinc-500 uppercase tracking-widest">Horario semanal fijo</div>
+          {editando && (
+            <button type="button" onClick={agregarHorario}
+              className="text-xs text-red-500 hover:text-red-400 transition-colors font-medium">
+              + Agregar día
+            </button>
+          )}
+        </div>
+
+        {(editando ? horForm : horarios).filter(h => !h._eliminar).length === 0 && !editando ? (
+          <p className="text-sm text-zinc-500">Sin horarios asignados</p>
+        ) : (
+          <div className="space-y-2">
+            {(editando ? horForm : horarios).map((h, idx) => (
+              <div key={idx} className={`transition-opacity ${h._eliminar ? 'opacity-30' : ''}`}>
+                {editando ? (
+                  <div className="grid grid-cols-2 sm:grid-cols-[1fr_1fr_1fr_auto] gap-2 items-center">
+                    <select value={h.dia} disabled={h._eliminar}
+                      onChange={e => setHorario(idx, 'dia', e.target.value)}
+                      className="bg-raised border border-border text-foreground rounded-lg px-2 py-2 text-sm focus:outline-none focus:border-red-600 disabled:text-zinc-500">
+                      {DIAS.map(d => <option key={d} value={d}>{DIAS_LABEL_LARGO[d]}</option>)}
+                    </select>
+                    <div className="flex gap-2 items-center">
+                      <select value={h.hora?.slice(0,5) || ''} disabled={h._eliminar}
+                        onChange={e => setHorario(idx, 'hora', e.target.value)}
+                        className="flex-1 bg-raised border border-border text-foreground rounded-lg px-2 py-2 text-sm focus:outline-none focus:border-red-600 disabled:text-zinc-500">
+                        {HORAS.map(ho => <option key={ho} value={ho}>{ho}</option>)}
+                      </select>
+                      <button type="button" onClick={() => marcarEliminar(idx)}
+                        className="sm:hidden w-7 h-7 flex items-center justify-center rounded-lg text-sm shrink-0 text-zinc-600 hover:text-red-400">
+                        {h._eliminar ? '↩' : '✕'}
+                      </button>
+                    </div>
+                    <select value={h.tipo} disabled={h._eliminar}
+                      onChange={e => setHorario(idx, 'tipo', e.target.value)}
+                      className="col-span-2 sm:col-span-1 bg-raised border border-border text-foreground rounded-lg px-2 py-2 text-sm focus:outline-none focus:border-red-600 disabled:text-zinc-500">
+                      <option value="personalizado">Personalizado</option>
+                      <option value="semipersonalizado">Semi Personalizado</option>
+                    </select>
+                    <button type="button" onClick={() => marcarEliminar(idx)}
+                      className="hidden sm:flex w-7 h-7 items-center justify-center rounded-lg text-sm transition-all text-zinc-600 hover:text-red-400 hover:bg-red-900/20"
+                      title={h._eliminar ? 'Restaurar' : 'Eliminar'}>
+                      {h._eliminar ? '↩' : '✕'}
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-3 py-2 border-b border-border last:border-b-0">
+                    <span className="text-sm font-medium text-foreground capitalize w-24 shrink-0">{h.dia}</span>
+                    <span className="text-sm font-bold text-red-500 w-14 shrink-0">{h.hora?.slice(0,5)}</span>
+                    <span className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${
+                      h.tipo === 'personalizado'
+                        ? 'bg-purple-500/10 text-purple-400'
+                        : 'bg-blue-500/10 text-blue-400'
+                    }`}>
+                      {h.tipo === 'personalizado' ? 'Personalizado' : 'Semi'}
+                    </span>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Historial de rutinas */}

@@ -12,7 +12,7 @@ const DIAS_2 = { lunes:'Lu', martes:'Ma', miercoles:'Mi', jueves:'Ju', viernes:'
 
 const FORM_EXTRA_INIT = {
   alumno_id:'', busqueda:'', nombre:'', telefono:'', plan:'3x/sem', coach_id:'',
-  dia:'lunes', hora:'08:00', tipo:'grupal',
+  dia:'lunes', hora:'08:00', tipo:'semipersonalizado',
 }
 
 export default function HorariosCalendar({
@@ -104,11 +104,12 @@ export default function HorariosCalendar({
     const movidas = excepciones
       .filter(exc => {
         if (!exc.fecha_nueva || exc.cancelado) return false
-        if (exc.hora_nueva?.slice(0,5) !== hora || exc.fecha_nueva !== fechaStr) return false
-        if (coachFiltro) {
-          const h = horarios.find(x => x.id === exc.alumno_horario_id)
-          return h?.coach_id === coachFiltro
-        }
+        if (exc.fecha_nueva !== fechaStr) return false
+        // Si no hay hora_nueva, la clase se mueve con su hora original
+        const h = horarios.find(x => x.id === exc.alumno_horario_id)
+        const horaEfectiva = exc.hora_nueva?.slice(0,5) || h?.hora?.slice(0,5)
+        if (horaEfectiva !== hora) return false
+        if (coachFiltro) return h?.coach_id === coachFiltro
         return true
       })
       .map(exc => {
@@ -455,11 +456,17 @@ export default function HorariosCalendar({
                     .filter(exc => {
                       if (!exc.cancelado && exc.fecha_nueva === fechaStr) {
                         if (!coachFiltro) return true
-                        return horarios.find(h => h.id === exc.alumno_horario_id)?.coach_id === coachFiltro
+                        const h = horarios.find(x => x.id === exc.alumno_horario_id)
+                        return h?.coach_id === coachFiltro
                       }
                       return false
                     })
-                    .map(exc => horarios.find(h => h.id === exc.alumno_horario_id))
+                    .map(exc => {
+                      const h = horarios.find(x => x.id === exc.alumno_horario_id)
+                      if (!h) return null
+                      // Aplicar hora nueva si existe
+                      return exc.hora_nueva ? { ...h, hora: exc.hora_nueva } : h
+                    })
                     .filter(Boolean),
                 ]
 
@@ -531,7 +538,7 @@ export default function HorariosCalendar({
                     {' · '}
                     <span className="capitalize">{slotAccion.dia}</span>
                     {' · '}
-                    {slotAccion.tipo === 'grupal' ? 'Grupal' : 'Personalizado'}
+                    {slotAccion.tipo === 'semipersonalizado' ? 'Semi Personalizado' : 'Personalizado'}
                     {slotAccion._movida && <span className="text-amber-500"> · Reagendada</span>}
                   </div>
                 </div>
@@ -796,12 +803,12 @@ function HorarioForm({ formExtra, setFormExtra }) {
       <div>
         <label className="text-[10px] text-zinc-500 uppercase tracking-wider block mb-2">Tipo</label>
         <div className="flex gap-2">
-          {['grupal','personalizado'].map(t => (
-            <button key={t} type="button" onClick={() => setFormExtra(f => ({ ...f, tipo: t }))}
-              className={`flex-1 py-2.5 rounded-xl border text-xs font-bold transition-all capitalize ${
-                formExtra.tipo === t ? 'bg-red-600/15 border-red-600/40 text-red-500' : 'border-border-strong text-zinc-500 hover:text-foreground'
+          {[{val:'personalizado',label:'Personalizado'},{val:'semipersonalizado',label:'Semi Personalizado'}].map(({val,label}) => (
+            <button key={val} type="button" onClick={() => setFormExtra(f => ({ ...f, tipo: val }))}
+              className={`flex-1 py-2.5 rounded-xl border text-xs font-bold transition-all ${
+                formExtra.tipo === val ? 'bg-red-600/15 border-red-600/40 text-red-500' : 'border-border-strong text-zinc-500 hover:text-foreground'
               }`}>
-              {t}
+              {label}
             </button>
           ))}
         </div>

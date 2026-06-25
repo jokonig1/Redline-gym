@@ -6,7 +6,7 @@ import { DIAS, DIAS_LABEL_LARGO, DIAS_POR_PLAN } from '@/lib/constants'
 
 function horariosParaPlan(plan) {
   return (DIAS_POR_PLAN[plan] || ['lunes']).map(dia => ({
-    dia, hora: '08:00', tipo: 'grupal',
+    dia, hora: '08:00', tipo: 'semipersonalizado',
   }))
 }
 
@@ -34,7 +34,7 @@ export default function NuevoAlumno() {
     nombre: '', rut: '', fecha_nacimiento: '', telefono: '',
     email: '', direccion: '', contacto_emergencia: '',
     telefono_emergencia: '', objetivos: '',
-    restricciones_medicas: '', tipo_clase: 'Grupal', plan: '3x/sem', coach_id: '',
+    restricciones_medicas: '', tipo_clase: 'Semi Personalizado', plan: '3x/sem', coach_id: '',
   })
   const [horarios, setHorarios] = useState(() => horariosParaPlan('3x/sem'))
 
@@ -55,7 +55,7 @@ export default function NuevoAlumno() {
   }
 
   function agregarHorario() {
-    setHorarios(prev => [...prev, { dia: 'lunes', hora: '08:00', tipo: 'grupal' }])
+    setHorarios(prev => [...prev, { dia: 'lunes', hora: '08:00', tipo: 'semipersonalizado' }])
   }
 
   function eliminarHorario(index) {
@@ -165,7 +165,7 @@ export default function NuevoAlumno() {
             <div>
               <label className="text-xs text-zinc-500 uppercase tracking-wider block mb-1.5">Tipo de clase</label>
               <div className="flex gap-2">
-                {['Grupal', 'Personalizado'].map(t => (
+                {['Personalizado', 'Semi Personalizado'].map(t => (
                   <button
                     key={t}
                     type="button"
@@ -271,18 +271,21 @@ export default function NuevoAlumno() {
                   <div className="col-span-2">
                     <label className="text-[10px] text-zinc-500 uppercase tracking-wider block mb-1">Tipo de clase</label>
                     <div className="flex gap-2">
-                      {['grupal', 'personalizado'].map(t => (
+                      {[
+                        { val: 'personalizado',     label: 'Personalizado'    },
+                        { val: 'semipersonalizado', label: 'Semi Personalizado' },
+                      ].map(({ val, label }) => (
                         <button
-                          key={t}
+                          key={val}
                           type="button"
-                          onClick={() => handleHorarioChange(i, 'tipo', t)}
-                          className={`flex-1 py-2 rounded-lg border text-xs font-medium transition-all capitalize ${
-                            h.tipo === t
+                          onClick={() => handleHorarioChange(i, 'tipo', val)}
+                          className={`flex-1 py-2 rounded-lg border text-xs font-medium transition-all ${
+                            h.tipo === val
                               ? 'bg-red-600/15 border-red-600/40 text-red-500'
                               : 'border-border text-zinc-500 hover:text-foreground'
                           }`}
                         >
-                          {t}
+                          {label}
                         </button>
                       ))}
                     </div>

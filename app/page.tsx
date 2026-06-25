@@ -4,22 +4,28 @@ import Link from 'next/link'
 import Image from 'next/image'
 
 // ── Datos editables ───────────────────────────────────────────────────────────
-const WHATSAPP = '+56912345678'   // ← cambiá esto por el número real
+const WHATSAPP = '+56973672191'   // ← cambiá esto por el número real
 const INSTAGRAM = 'redlinehf'    // ← sin @
-const DIRECCION = 'Ciudad de los Valles, Santiago'
+const DIRECCION = 'Av. Transversal Uno #845, Ciudad de los Valles, Pudahuel'
 
 const TESTIMONIOS = [
   {
-    imagen:   '/exp1.png',
+    imagen:   '/exp3.jpeg',
     texto:    'Llegué sin nunca haber entrenado y en 4 meses transformé mi cuerpo y mi energía. El seguimiento de mi profe marcó toda la diferencia.',
     nombre:   'Valentina R.',
     servicio: 'Plan Personalizado · 3x/sem',
   },
   {
-    imagen:   '/exp2.png',
+    imagen:   '/exp4.jpeg',
     texto:    'Venía de una rotura de ligamentos. El equipo de RedLine me ayudó a volver a entrenar sin miedo y con un plan real de progresión.',
     nombre:   'Ignacio M.',
     servicio: 'Reintegro Deportivo',
+  },
+  {
+    imagen:   '/exp5.jpeg',
+    texto:    'El ambiente es increíble. Acá te conocen, te guían y celebran tus logros. No se siente como un gimnasio más, si no como una comunidad real.',
+    nombre:   'Fernanda K.',
+    servicio: 'Plan Semi Personalizado · 2x/sem',
   },
 ]
 
@@ -28,7 +34,7 @@ const HORARIOS_SIMULADOS = [
   { dia: 'Martes',    mañana: '07:00 – 13:00', tarde: '16:00 – 22:00' },
   { dia: 'Miércoles', mañana: '07:00 – 13:00', tarde: '16:00 – 22:00' },
   { dia: 'Jueves',    mañana: '07:00 – 13:00', tarde: '16:00 – 22:00' },
-  { dia: 'Viernes',   mañana: '07:00 – 13:00', tarde: '16:00 – 21:00' },
+  { dia: 'Viernes',   mañana: '07:00 – 13:00', tarde: '16:00 – 22:00' },
   { dia: 'Sábado',    mañana: '09:00 – 13:00', tarde: '—' },
 ]
 
@@ -193,13 +199,12 @@ export default function LandingPage() {
           </div>
 
           <h1 className="text-4xl sm:text-5xl md:text-6xl font-black tracking-tight leading-none mb-6 text-foreground">
-            No solo entrenas.<br />
-            <span className="text-red-600">Aquí avanzas.</span>
+            No entrenas solo.<br />
+            <span className="text-red-600">Te acompañamos en cada paso.</span>
           </h1>
 
           <p className="text-base sm:text-lg text-zinc-500 max-w-xl mx-auto mb-10 leading-relaxed">
-            Guía profesional, plan personalizado y acompañamiento real.
-            Todo en un mismo lugar, con un enfoque integral.
+            Entrenamiento personalizado, seguimiento continuo y apoyo profesional para que avances con seguridad hacia tus objetivos.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
@@ -228,10 +233,10 @@ export default function LandingPage() {
               </h2>
               <div className="space-y-4 text-zinc-500 leading-relaxed text-sm sm:text-base">
                 <p>
-                  RedLine nació con una convicción clara: el entrenamiento bien hecho transforma vidas. Somos un centro especializado en entrenamiento, rehabilitación y bienestar ubicado en Ciudad de los Valles, donde cada persona recibe atención profesional y seguimiento real.
+                  Redline nació con la idea de crear un gimnasio donde cualquier persona pueda sentirse cómoda entrenando, sin importar su nivel de experiencia. Aquí valoramos el esfuerzo diario, el compañerismo y el progreso de cada alumno.
                 </p>
                 <p>
-                  Cada alumno tiene su rutina, su profe y su proceso. Ya sea que quieras ganar músculo, recuperarte de una lesión o simplemente moverte mejor, estás en el lugar correcto.
+                  Nuestro objetivo es ayudarte a construir hábitos saludables, superar tus propios límites y disfrutar del proceso. Porque en Redline cada entrenamiento cuenta y cada avance importa.
                 </p>
               </div>
               <a href={waLink} target="_blank" rel="noopener noreferrer"
@@ -242,10 +247,10 @@ export default function LandingPage() {
 
             <div className="grid grid-cols-2 gap-4">
               {[
-                { valor: '100%',    label: 'Personalizado'  },
-                { valor: 'Coaches', label: 'Certificados'   },
-                { valor: 'Todos',   label: 'Los niveles'    },
-                { valor: '6 días',  label: 'A la semana'    },
+                { valor: '100%',    label: 'Personalizado' },
+                { valor: 'Coaches', label: 'Certificados'  },
+                { valor: 'Todos',   label: 'Los niveles'   },
+                { valor: '6 días',  label: 'A la semana'   },
               ].map(({ valor, label }) => (
                 <div key={label} className="bg-surface border border-border rounded-2xl p-6 text-center">
                   <div className="text-2xl sm:text-3xl font-black text-red-600 mb-1">{valor}</div>
@@ -273,7 +278,7 @@ export default function LandingPage() {
                 <Image src="/icono_musculacion.png" alt="Musculación" width={40} height={40} className="w-full h-full object-contain" />
               </div>
               <h3 className="text-lg font-black text-foreground mb-3">Musculación</h3>
-              <p className="text-sm text-zinc-500 leading-relaxed">Entrenamiento de fuerza para mejorar tu composición corporal, ganar masa muscular y reducir grasa. Planificación progresiva para todos los niveles, desde principiantes hasta avanzados.</p>
+              <p className="text-sm text-zinc-500 leading-relaxed">Entrenamiento de fuerza para mejorar tu composición corporal, ganar masa muscular y reducir grasa. Planificación progresiva para todos los niveles.</p>
             </div>
 
             {/* Reintegro Deportivo */}
@@ -282,7 +287,7 @@ export default function LandingPage() {
                 <Image src="/icono_reintegro_deportivo.png" alt="Reintegro Deportivo" width={40} height={40} className="w-full h-full object-contain" />
               </div>
               <h3 className="text-lg font-black text-foreground mb-3">Reintegro Deportivo</h3>
-              <p className="text-sm text-zinc-500 leading-relaxed">¿Volvés de una lesión? Te guiamos paso a paso para retomar el movimiento de forma segura y sin recaídas. Protocolos adaptados a tu proceso y tus tiempos.</p>
+              <p className="text-sm text-zinc-500 leading-relaxed">¿Vuelves de una lesión? Te guiamos paso a paso para retomar el movimiento de forma segura y sin recaídas. Protocolos adaptados a tu proceso y tus tiempos.</p>
             </div>
 
             {/* Kinesiología */}
@@ -303,10 +308,7 @@ export default function LandingPage() {
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-14">
             <div className="text-[10px] font-bold uppercase tracking-[3px] text-red-600 mb-4">Planes y precios</div>
-            <h2 className="text-3xl sm:text-4xl font-black text-foreground">Elegí el que se adapta a vos</h2>
-            <p className="text-zinc-500 mt-3 text-sm max-w-md mx-auto">
-              Todos los planes incluyen rutina personalizada y seguimiento de tu profesor.
-            </p>
+            <h2 className="text-3xl sm:text-4xl font-black text-foreground">Elige el que se adapta a ti</h2>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -341,7 +343,7 @@ export default function LandingPage() {
 
             {/* Plan Semi Personalizado */}
             <div className="bg-surface border border-border rounded-2xl p-7">
-              <div className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 mb-2">Grupal</div>
+              <div className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 mb-2">Semi Personalizado</div>
               <h3 className="text-xl font-black text-foreground mb-1">Plan Semi Personalizado</h3>
               <p className="text-zinc-500 text-sm mb-6">
                 Grupos de máximo 8 personas. Cada alumno entrena con su propia pauta. Ambiente grupal con atención individual.
