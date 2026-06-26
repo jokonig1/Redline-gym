@@ -264,7 +264,7 @@ export default function AdminMetricas() {
   if (error)   return <div className="text-red-400 text-sm">{error}</div>
 
   const { alumnos, asistencia, excepciones, porPlan, porCoach, sesionesRutina, coaches, semana,
-          clasesEstaSemana, ingresosMes, ingresosMesAnterior } = data
+          clasesEstaSemana, ingresosMes, ingresosMesAnterior, historico = [] } = data
 
   function fmtPesos(n) {
     if (!n) return '$0'
@@ -349,7 +349,7 @@ export default function AdminMetricas() {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
         <div className="bg-surface border border-border rounded-2xl p-5">
-          <SectionTitle>Tasa de asistencia mensual</SectionTitle>
+          <SectionTitle>Tasa de asistencia semanal</SectionTitle>
           <div className="flex items-center gap-4">
             <div className="relative shrink-0">
               <Ring pct={asistencia.tasa ?? 0} color="#22c55e" size={80} stroke={8} />
@@ -493,6 +493,150 @@ export default function AdminMetricas() {
         />
       </div>
 
+      {/* Fila 6: Comparación mensual */}
+      {historico.length > 0 && (
+        <div className="bg-surface border border-border rounded-2xl p-5">
+          <SectionTitle>Evolución mensual — últimos 6 meses</SectionTitle>
+
+          {/* Tabla comparativa */}
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm min-w-[520px]">
+              <thead>
+                <tr className="border-b border-border">
+                  <th className="text-left text-[10px] text-zinc-500 uppercase tracking-wider pb-3 font-medium">Métrica</th>
+                  {historico.map(m => (
+                    <th key={m.key} className="text-center text-[10px] text-zinc-500 uppercase tracking-wider pb-3 font-medium px-2">
+                      {m.mes}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+
+                {/* Alumnos acumulados */}
+                <tr>
+                  <td className="py-3 pr-4 text-zinc-500 text-xs">Total alumnos</td>
+                  {historico.map((m, i) => {
+                    const prev = i > 0 ? historico[i-1].acumulados : null
+                    const diff = prev !== null ? m.acumulados - prev : null
+                    return (
+                      <td key={m.key} className="text-center py-3 px-2">
+                        <div className="text-base font-black text-foreground">{m.acumulados}</div>
+                        {diff !== null && diff !== 0 && (
+                          <div className={`text-[10px] font-bold ${diff > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                            {diff > 0 ? '+' : ''}{diff}
+                          </div>
+                        )}
+                      </td>
+                    )
+                  })}
+                </tr>
+
+                {/* Nuevos ese mes */}
+                <tr>
+                  <td className="py-3 pr-4 text-zinc-500 text-xs">Nuevos</td>
+                  {historico.map(m => (
+                    <td key={m.key} className="text-center py-3 px-2">
+                      <div className={`text-base font-black ${m.nuevos > 0 ? 'text-green-400' : 'text-zinc-500'}`}>
+                        {m.nuevos > 0 ? `+${m.nuevos}` : '—'}
+                      </div>
+                    </td>
+                  ))}
+                </tr>
+
+                {/* Clases realizadas */}
+                <tr>
+                  <td className="py-3 pr-4 text-zinc-500 text-xs">Clases realizadas</td>
+                  {historico.map((m, i) => {
+                    const prev = i > 0 ? historico[i-1].clasesRealizadas : null
+                    const diff = prev !== null ? m.clasesRealizadas - prev : null
+                    return (
+                      <td key={m.key} className="text-center py-3 px-2">
+                        <div className="text-base font-black text-foreground">{m.clasesRealizadas}</div>
+                        {diff !== null && diff !== 0 && (
+                          <div className={`text-[10px] font-bold ${diff > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                            {diff > 0 ? '+' : ''}{diff}
+                          </div>
+                        )}
+                      </td>
+                    )
+                  })}
+                </tr>
+
+                {/* Inasistencias */}
+                <tr>
+                  <td className="py-3 pr-4 text-zinc-500 text-xs">Inasistencias</td>
+                  {historico.map((m, i) => {
+                    const prev = i > 0 ? historico[i-1].inasistencias : null
+                    const diff = prev !== null ? m.inasistencias - prev : null
+                    return (
+                      <td key={m.key} className="text-center py-3 px-2">
+                        <div className="text-base font-black text-foreground">{m.inasistencias}</div>
+                        {diff !== null && diff !== 0 && (
+                          <div className={`text-[10px] font-bold ${diff > 0 ? 'text-red-400' : 'text-green-400'}`}>
+                            {diff > 0 ? '+' : ''}{diff}
+                          </div>
+                        )}
+                      </td>
+                    )
+                  })}
+                </tr>
+
+                {/* Ingresos estimados */}
+                <tr>
+                  <td className="py-3 pr-4 text-zinc-500 text-xs">Ingresos est.</td>
+                  {historico.map((m, i) => {
+                    const prev = i > 0 ? historico[i-1].ingresos : null
+                    const diff = prev !== null ? m.ingresos - prev : null
+                    const pct  = prev > 0 ? Math.round(Math.abs(diff) / prev * 100) : null
+                    return (
+                      <td key={m.key} className="text-center py-3 px-2">
+                        <div className="text-xs font-black text-green-400">{fmtPesos(m.ingresos)}</div>
+                        {diff !== null && diff !== 0 && pct !== null && (
+                          <div className={`text-[10px] font-bold ${diff > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                            {diff > 0 ? '↑' : '↓'}{pct}%
+                          </div>
+                        )}
+                      </td>
+                    )
+                  })}
+                </tr>
+
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mini barras visuales para alumnos acumulados */}
+          <div className="mt-5 pt-4 border-t border-border">
+            <div className="text-[10px] text-zinc-500 uppercase tracking-wider mb-3">Total alumnos por mes</div>
+            <div className="flex items-end gap-2 h-16">
+              {(() => {
+                const max = Math.max(...historico.map(m => m.acumulados), 1)
+                return historico.map((m, i) => {
+                  const h = Math.max((m.acumulados / max) * 100, 4)
+                  const esActual = i === historico.length - 1
+                  return (
+                    <div key={m.key} className="flex-1 flex flex-col items-center gap-1">
+                      <div className="text-[9px] text-zinc-500 font-bold">{m.acumulados}</div>
+                      <div
+                        className="w-full rounded-t-sm transition-all duration-700"
+                        style={{
+                          height: `${h}%`,
+                          background: esActual ? '#ef4444' : '#ef444440',
+                          minHeight: 4,
+                        }}
+                      />
+                      <div className={`text-[9px] uppercase font-bold ${esActual ? 'text-red-500' : 'text-zinc-500'}`}>
+                        {m.mes}
+                      </div>
+                    </div>
+                  )
+                })
+              })()}
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   )

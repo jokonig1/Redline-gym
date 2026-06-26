@@ -21,6 +21,10 @@ export async function GET() {
   const mesInicio    = toDateStr(inicioMes)
   const mesActual    = toDateStr(today)
 
+  // Últimos 6 meses para comparación histórica
+  const hace6meses    = new Date(today.getFullYear(), today.getMonth() - 5, 1)
+  const hace6mesesStr = toDateStr(hace6meses)
+
   const [
     { data: alumnos },
     { data: horarios },
@@ -29,6 +33,7 @@ export async function GET() {
     { data: coaches },
     { data: sesiones },
     { data: alumnosNuevosMes },
+    { data: asistenciasHistoricas },
   ] = await Promise.all([
     supabaseAdmin.from('alumnos').select('id, activo, plan, tipo_clase, coach_id, created_at'),
     supabaseAdmin.from('alumno_horarios').select('alumno_id, dia, hora').eq('activo', true),
@@ -50,7 +55,18 @@ export async function GET() {
       .eq('activo', true)
       .gte('created_at', mesInicio)
       .lte('created_at', mesActual + 'T23:59:59'),
+    supabaseAdmin.from('asistencias')
+      .select('fecha, asistio')
+      .gte('fecha', hace6mesesStr)
+      .lte('fecha', mesActual),
   ])
+
+  // Asistencias de la semana para la tasa semanal
+  const { data: asistenciasSemana } = await supabaseAdmin
+    .from('asistencias')
+    .select('asistio')
+    .gte('fecha', semanaInicio)
+    .lte('fecha', semanaFin)
 
   const activos   = (alumnos || []).filter(a => a.activo)
   const inactivos = (alumnos || []).filter(a => !a.activo)
@@ -115,10 +131,14 @@ export async function GET() {
     return { nombre: coach?.nombre || 'Sin coach', color: coach?.color ?? null, count }
   }).sort((a, b) => b.count - a.count)
 
-  // Asistencia
+  // Asistencia semanal (para el ring de tasa)
+  const totalAsistSem = (asistenciasSemana || []).length
+  const asistieronSem = (asistenciasSemana || []).filter(a => a.asistio).length
+  const tasaAsist     = totalAsistSem > 0 ? Math.round(asistieronSem / totalAsistSem * 100) : null
+
+  // Asistencia mensual (para clases realizadas y el histórico)
   const totalAsist  = (asistencias || []).length
   const asistieron  = (asistencias || []).filter(a => a.asistio).length
-  const tasaAsist   = totalAsist > 0 ? Math.round(asistieron / totalAsist * 100) : null
 
   // Excepciones
   const cancelaciones   = (excepciones || []).filter(e => e.cancelado).length
@@ -142,6 +162,45 @@ export async function GET() {
   const activosMesAnterior = activos.filter(a => new Date(a.created_at) < inicioMes)
   const ingresosMesAnterior = activosMesAnterior.reduce((sum, a) => sum + precioAlumno(a), 0)
 
+  // ── Histórico mensual (últimos 6 meses) ──────────────────────────────────────
+  const mesesLabel = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic']
+
+  const historico = Array.from({ length: 6 }, (_, i) => {
+    const fecha = new Date(today.getFullYear(), today.getMonth() - (5 - i), 1)
+    const year  = fecha.getFullYear()
+    const month = fecha.getMonth() // 0-based
+    const key   = `${year}-${String(month + 1).padStart(2, '0')}`
+
+    // Alumnos nuevos ese mes
+    const nuevos = (alumnos || []).filter(a => {
+      const d = new Date(a.created_at)
+      return d.getFullYear() === year && d.getMonth() === month
+    }).length
+
+    // Asistencias ese mes
+    const asistMes = (asistenciasHistoricas || []).filter(a => a.fecha?.startsWith(key))
+    const clasesRealizadas = asistMes.filter(a => a.asistio).length
+    const inasistencias    = asistMes.filter(a => !a.asistio).length
+
+    // Acumulado de alumnos activos al final de ese mes
+    const fin = new Date(year, month + 1, 0) // último día del mes
+    const alumnosMes = (alumnos || []).filter(a => new Date(a.created_at) <= fin)
+    const acumulados = alumnosMes.length
+
+    // Ingresos estimados ese mes
+    const ingresos = alumnosMes.reduce((sum, a) => sum + precioAlumno(a), 0)
+
+    return {
+      mes:    mesesLabel[month],
+      key,
+      nuevos,
+      clasesRealizadas,
+      inasistencias,
+      acumulados,
+      ingresos,
+    }
+  })
+
   const CAPACIDAD_MAX = 300
 
   return Response.json({
@@ -154,7 +213,7 @@ export async function GET() {
       conHorario:   alumnosConHorario,
       nuevosEsteMes: (alumnosNuevosMes || []).length,
     },
-    asistencia:  { total: totalAsist, asistieron, tasa: tasaAsist },
+    asistencia:  { total: totalAsistSem, asistieron: asistieronSem, tasa: tasaAsist },
     excepciones: { cancelaciones, reagendamientos, total: cancelaciones + reagendamientos },
     porPlan:     Object.entries(porPlan).map(([plan, count]) => ({ plan, count })),
     porCoach:    porCoachArr,
@@ -166,5 +225,6 @@ export async function GET() {
     ocupacionPorHora,
     ocupacionPorDiaHora,
     capacidadPorBloque:   16,
+    historico,
   })
 }
