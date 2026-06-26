@@ -303,8 +303,8 @@ export default function AdminMetricas() {
         <StatCard tag="Alumnos" label="Alumnos activos" value={alumnos.activos} color="#22c55e"
           sub={`${alumnos.inactivos} inactivos`} />
         <StatCard tag="Nuevos" label="Nuevos alumnos este mes" value={alumnos.nuevosEsteMes} color="#fbbf24" />
-        <StatCard tag="Clases" label="Clases realizadas esta semana" value={clasesEstaSemana ?? 0} color="#22d3ee"
-          note="semana" />
+        <StatCard tag="Clases" label="Clases realizadas este mes" value={clasesEstaSemana ?? 0} color="#22d3ee"
+          note="mes" />
         {/* Card ingresos con flecha comparativa */}
         {(() => {
           const diff   = ingresosMes - (ingresosMesAnterior || 0)
@@ -349,7 +349,7 @@ export default function AdminMetricas() {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
         <div className="bg-surface border border-border rounded-2xl p-5">
-          <SectionTitle>Tasa de asistencia semanal</SectionTitle>
+          <SectionTitle>Tasa de asistencia mensual</SectionTitle>
           <div className="flex items-center gap-4">
             <div className="relative shrink-0">
               <Ring pct={asistencia.tasa ?? 0} color="#22c55e" size={80} stroke={8} />
@@ -369,7 +369,7 @@ export default function AdminMetricas() {
                 <div className="text-xs text-zinc-500">inasistencias</div>
               </div>
               {asistencia.total === 0 && (
-                <div className="text-xs text-zinc-600 italic self-center">Sin registros</div>
+                <div className="text-xs text-zinc-600 italic self-center">Sin registros este mes</div>
               )}
             </div>
           </div>
@@ -442,7 +442,7 @@ export default function AdminMetricas() {
 
       {/* Fila 4: Cancelaciones vs Reagendamientos */}
       <div className="bg-surface border border-border rounded-2xl p-5">
-        <SectionTitle>Cancelaciones y reagendamientos — semana actual</SectionTitle>
+        <SectionTitle>Cancelaciones y reagendamientos — mes actual</SectionTitle>
 
         {excepciones.total === 0 ? (
           <div className="text-center py-6">
@@ -453,9 +453,9 @@ export default function AdminMetricas() {
           <div className="grid grid-cols-2 gap-4">
             {[
               { label: 'Cancelaciones',   value: excepciones.cancelaciones,   color: '#f87171',
-                sub: 'clases canceladas definitivamente' },
+                sub: 'clases canceladas este mes' },
               { label: 'Reagendamientos', value: excepciones.reagendamientos,  color: '#fbbf24',
-                sub: 'clases movidas a otra fecha' },
+                sub: 'clases movidas este mes' },
             ].map(({ label, value, color, sub }) => (
               <div key={label} className="bg-hover border border-border rounded-xl p-4 text-center"
                 style={{ borderTop: `2px solid ${color}40` }}>

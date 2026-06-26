@@ -34,17 +34,17 @@ export async function GET() {
     supabaseAdmin.from('alumno_horarios').select('alumno_id, dia, hora').eq('activo', true),
     supabaseAdmin.from('alumno_horarios_excepciones')
       .select('cancelado, fecha_nueva')
-      .gte('fecha_original', semanaInicio)
-      .lte('fecha_original', semanaFin),
+      .gte('fecha_original', mesInicio)
+      .lte('fecha_original', mesActual),
     supabaseAdmin.from('asistencias')
       .select('asistio')
-      .gte('fecha', semanaInicio)
-      .lte('fecha', semanaFin),
+      .gte('fecha', mesInicio)
+      .lte('fecha', mesActual),
     supabaseAdmin.from('profiles').select('id, nombre, color').in('rol', ['coach', 'admin']),
     supabaseAdmin.from('sesiones_rutina')
       .select('id')
-      .gte('fecha', semanaInicio)
-      .lte('fecha', semanaFin),
+      .gte('fecha', mesInicio)
+      .lte('fecha', mesActual),
     supabaseAdmin.from('alumnos')
       .select('id')
       .eq('activo', true)
