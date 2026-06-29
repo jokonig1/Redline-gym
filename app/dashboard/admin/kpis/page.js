@@ -57,6 +57,15 @@ function BarRow({ label, value, max, colorHex, pct }) {
   )
 }
 
+function BloqueTitulo({ children }) {
+  return (
+    <div className="flex items-center gap-3 mb-3">
+      <div className="w-1 h-5 rounded-full bg-red-600" />
+      <h2 className="text-sm font-black text-foreground uppercase tracking-widest">{children}</h2>
+    </div>
+  )
+}
+
 function SectionTitle({ children }) {
   return (
     <div className="text-[10px] text-zinc-500 uppercase tracking-widest font-bold mb-4">{children}</div>
@@ -263,17 +272,23 @@ export default function AdminMetricas() {
   if (loading) return <LoadingSpinner />
   if (error)   return <div className="text-red-400 text-sm">{error}</div>
 
-  const { alumnos, asistencia, excepciones, porPlan, porCoach, sesionesRutina, coaches, semana,
-          clasesEstaSemana, ingresosMes, ingresosMesAnterior, historico = [] } = data
+  const {
+    alumnos, asistencia, excepciones, porPlan, porCoach, sesionesRutina,
+    semana, clasesEstaSemana, ingresosMes, ingresosMesAnterior, historico = [],
+    costosFijos, margen, margenPct, puntoEquilibrio, precioPromedio,
+    tasaRetencion, adherenciaRutina, asistieronMes,
+  } = data
 
   function fmtPesos(n) {
-    if (!n) return '$0'
-    return '$' + Math.round(n).toLocaleString('es-CL')
+    if (!n && n !== 0) return '—'
+    const abs = Math.abs(Math.round(n))
+    const str = '$' + abs.toLocaleString('es-CL')
+    return n < 0 ? '-' + str : str
   }
-  const capacidadMax  = data.capacidadMax ?? 100
-  const tasaOcupacion = Math.round(alumnos.activos / capacidadMax * 100)
-  const maxPlan  = Math.max(...porPlan.map(p => p.count), 1)
-  const maxCoach = Math.max(...porCoach.map(c => c.count), 1)
+
+  const capacidadMax = data.capacidadMax ?? 300
+  const maxPlan      = Math.max(...porPlan.map(p => p.count), 1)
+  const maxCoachRev  = Math.max(...(porCoach || []).map(c => c.revenue || 0), 1)
 
   function fmtFecha(str) {
     if (!str) return ''
@@ -282,8 +297,10 @@ export default function AdminMetricas() {
     return `${parseInt(d)} ${meses[parseInt(m) - 1]}`
   }
 
+  const tasaOcupacion = Math.round(alumnos.activos / capacidadMax * 100)
+
   return (
-    <div className="max-w-4xl space-y-6">
+    <div className="max-w-4xl space-y-8">
 
       {/* Encabezado */}
       <div className="flex items-end justify-between">
@@ -298,113 +315,148 @@ export default function AdminMetricas() {
         </span>
       </div>
 
-      {/* Fila 1: Stats principales */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
-        <StatCard tag="Alumnos" label="Alumnos activos" value={alumnos.activos} color="#22c55e"
-          sub={`${alumnos.inactivos} inactivos`} />
-        <StatCard tag="Nuevos" label="Nuevos alumnos este mes" value={alumnos.nuevosEsteMes} color="#fbbf24" />
-        <StatCard tag="Clases" label="Clases realizadas este mes" value={clasesEstaSemana ?? 0} color="#22d3ee"
-          note="mes" />
-        {/* Card ingresos con flecha comparativa */}
-        {(() => {
-          const diff   = ingresosMes - (ingresosMesAnterior || 0)
-          const pct    = ingresosMesAnterior > 0 ? Math.round(Math.abs(diff) / ingresosMesAnterior * 100) : null
-          const subido = diff > 0
-          const igual  = diff === 0 || pct === null
-          const color  = '#4ade80'
-          const strLen = fmtPesos(ingresosMes).length
-          const fontSize = strLen > 10 ? 'text-xl' : strLen > 7 ? 'text-2xl' : 'text-3xl'
-          return (
-            <div className="bg-surface border border-border rounded-2xl p-4 sm:p-5 flex flex-col justify-between h-36"
-              style={{ borderTop: `2px solid ${color}` }}>
-              {/* Tag */}
-              <div className="flex items-center justify-between">
-                <span className="text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full"
-                  style={{ background: `${color}20`, color }}>
-                  Ingresos
-                </span>
-                <span className="text-[10px] text-zinc-600">mes</span>
-              </div>
-              {/* Número */}
-              <div className={`${fontSize} font-black leading-tight`} style={{ color }}>
-                {fmtPesos(ingresosMes)}
-              </div>
-              {/* Comparación — misma altura que el sub de StatCard */}
-              <div>
-                {igual ? (
-                  <span className="text-[11px] text-zinc-500">Sin cambios vs mes anterior</span>
-                ) : (
-                  <span className={`text-[11px] font-bold flex items-center gap-1 ${subido ? 'text-green-400' : 'text-red-400'}`}>
-                    <span className="text-sm">{subido ? '↑' : '↓'}</span>
-                    {pct}% vs mes anterior
-                  </span>
-                )}
-              </div>
-            </div>
-          )
-        })()}
-      </div>
-
-      {/* Fila 2: Asistencia + Ocupación */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-
-        <div className="bg-surface border border-border rounded-2xl p-5">
-          <SectionTitle>Tasa de asistencia semanal</SectionTitle>
-          <div className="flex items-center gap-4">
-            <div className="relative shrink-0">
-              <Ring pct={asistencia.tasa ?? 0} color="#22c55e" size={80} stroke={8} />
-              <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-lg font-black text-foreground">
-                  {asistencia.tasa !== null ? `${asistencia.tasa}%` : '—'}
-                </span>
-              </div>
-            </div>
-            <div className="flex gap-4 flex-1 flex-wrap">
-              <div>
-                <div className="text-2xl font-black text-green-400">{asistencia.asistieron}</div>
-                <div className="text-xs text-zinc-500">asistencias</div>
-              </div>
-              <div>
-                <div className="text-2xl font-black text-red-400">{asistencia.total - asistencia.asistieron}</div>
-                <div className="text-xs text-zinc-500">inasistencias</div>
-              </div>
-              {asistencia.total === 0 && (
-                <div className="text-xs text-zinc-600 italic self-center">Sin registros este mes</div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-surface border border-border rounded-2xl p-5">
-          <SectionTitle>Tasa de ocupación</SectionTitle>
-          <div className="flex items-center gap-4">
-            <div className="relative shrink-0">
-              <Ring pct={tasaOcupacion ?? 0} color="#06b6d4" size={80} stroke={8} />
-              <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-lg font-black text-foreground">
-                  {tasaOcupacion !== null ? `${tasaOcupacion}%` : '—'}
-                </span>
-              </div>
-            </div>
-            <div className="flex gap-4 flex-1 flex-wrap">
-              <div>
-                <div className="text-2xl font-black text-cyan-400">{alumnos.activos}</div>
-                <div className="text-xs text-zinc-500">activos</div>
-              </div>
-              <div>
-                <div className="text-2xl font-black text-zinc-400">{capacidadMax - (alumnos.activos ?? 0)}</div>
-                <div className="text-xs text-zinc-500">cupos libres</div>
-              </div>
-              <div className="text-[10px] text-zinc-500 self-end">máx: {capacidadMax}</div>
-            </div>
-          </div>
+      {/* ── BLOQUE 1: ALUMNOS ── */}
+      <div>
+        <BloqueTitulo>Alumnos</BloqueTitulo>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          <StatCard tag="Activos" label="Alumnos activos" value={alumnos.activos} color="#22c55e"
+            sub={`${alumnos.inactivos} inactivos`} />
+          <StatCard tag="Nuevos" label="Nuevos este mes" value={alumnos.nuevosEsteMes} color="#fbbf24" />
+          <StatCard tag="Retención" label="Tasa de retención"
+            value={tasaRetencion !== null ? `${tasaRetencion}%` : '—'} color="#a78bfa"
+            sub={`${alumnos.total} alumnos históricos`} />
         </div>
       </div>
 
-      {/* Fila 3: Por plan + Por coach */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      {/* ── BLOQUE 2: FINANCIERO ── */}
+      <div>
+        <BloqueTitulo>Financiero</BloqueTitulo>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          {/* Ingresos con flecha */}
+          {(() => {
+            const diff   = ingresosMes - (ingresosMesAnterior || 0)
+            const pct    = ingresosMesAnterior > 0 ? Math.round(Math.abs(diff) / ingresosMesAnterior * 100) : null
+            const subido = diff > 0
+            const igual  = diff === 0 || pct === null
+            const color  = '#4ade80'
+            const strLen = fmtPesos(ingresosMes).length
+            const fs     = strLen > 10 ? 'text-xl' : strLen > 7 ? 'text-2xl' : 'text-3xl'
+            return (
+              <div className="bg-surface border border-border rounded-2xl p-4 flex flex-col justify-between h-36"
+                style={{ borderTop: `2px solid ${color}` }}>
+                <div className="flex items-center justify-between">
+                  <span className="text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full"
+                    style={{ background: `${color}20`, color }}>Ingresos</span>
+                  <span className="text-[10px] text-zinc-600">mes</span>
+                </div>
+                <div className={`${fs} font-black leading-tight`} style={{ color }}>{fmtPesos(ingresosMes)}</div>
+                <div>
+                  {igual
+                    ? <span className="text-[11px] text-zinc-500">Sin cambios vs mes anterior</span>
+                    : <span className={`text-[11px] font-bold flex items-center gap-1 ${subido ? 'text-green-400' : 'text-red-400'}`}>
+                        <span>{subido ? '↑' : '↓'}</span>{pct}% vs mes anterior
+                      </span>
+                  }
+                </div>
+              </div>
+            )
+          })()}
+
+          <StatCard tag="Costos fijos" label="Coaches + arriendo + servicios"
+            value={fmtPesos(costosFijos)} color="#f87171" />
+
+          {/* Margen */}
+          {(() => {
+            const color = margen >= 0 ? '#4ade80' : '#f87171'
+            const fs    = fmtPesos(margen).length > 10 ? 'text-xl' : 'text-2xl'
+            return (
+              <div className="bg-surface border border-border rounded-2xl p-4 flex flex-col justify-between h-36"
+                style={{ borderTop: `2px solid ${color}` }}>
+                <div className="flex items-center justify-between">
+                  <span className="text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full"
+                    style={{ background: `${color}20`, color }}>Margen</span>
+                  <span className="text-[10px] text-zinc-600">mes</span>
+                </div>
+                <div className={`${fs} font-black leading-tight`} style={{ color }}>{fmtPesos(margen)}</div>
+                <div className="text-[11px] font-bold" style={{ color }}>
+                  {margenPct}% del ingreso
+                </div>
+              </div>
+            )
+          })()}
+
+          <StatCard tag="Precio prom." label="Precio promedio por alumno"
+            value={fmtPesos(precioPromedio)} color="#22d3ee" />
+
+          <StatCard tag="Punto equilibrio" label="Alumnos necesarios para cubrir costos"
+            value={puntoEquilibrio !== null ? `${puntoEquilibrio} alumnos` : '—'}
+            color={alumnos.activos >= (puntoEquilibrio || 0) ? '#4ade80' : '#f87171'}
+            sub={alumnos.activos >= (puntoEquilibrio || 0)
+              ? `✓ Superado (${alumnos.activos} activos)`
+              : `Faltan ${(puntoEquilibrio || 0) - alumnos.activos}`} />
+
+          <StatCard tag="Clases" label="Clases realizadas este mes"
+            value={clasesEstaSemana ?? 0} color="#a78bfa" note="mes" />
+        </div>
+      </div>
+
+      {/* ── BLOQUE 3: COACHES ── */}
+      <div>
+        <BloqueTitulo>Coaches</BloqueTitulo>
         <div className="bg-surface border border-border rounded-2xl p-5">
-          <SectionTitle>Alumnos por plan</SectionTitle>
+          {porCoach.length === 0 ? (
+            <p className="text-xs text-zinc-600 italic">Sin datos</p>
+          ) : (
+            <div className="space-y-4">
+              {porCoach.map(({ nombre, count, color, revenue, costo, margen: mg, margenPct: mgPct }, i) => {
+                const paleta = color !== null && color !== undefined
+                  ? COLORES_COACH[Number(color) % COLORES_COACH.length]
+                  : COLORES_COACH[i % COLORES_COACH.length]
+                const pct = maxCoachRev > 0 ? Math.round((revenue / maxCoachRev) * 100) : 0
+                const positivo = mg >= 0
+                return (
+                  <div key={nombre} className="grid grid-cols-1 sm:grid-cols-[1fr_auto_auto_auto] gap-2 sm:gap-4 items-center">
+                    {/* Nombre + barra */}
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: paleta.border }} />
+                        <span className="text-sm font-medium text-foreground truncate">{nombre}</span>
+                        <span className="text-[11px] text-zinc-500 shrink-0">{count} alumnos</span>
+                      </div>
+                      <div className="h-2 bg-hover-md rounded-full overflow-hidden">
+                        <div className="h-full rounded-full transition-all duration-700"
+                          style={{ width: `${pct}%`, background: paleta.border }} />
+                      </div>
+                    </div>
+                    {/* Revenue */}
+                    <div className="text-right">
+                      <div className="text-[10px] text-zinc-500">Ingresos</div>
+                      <div className="text-sm font-bold text-green-400">{fmtPesos(revenue)}</div>
+                    </div>
+                    {/* Costo */}
+                    <div className="text-right">
+                      <div className="text-[10px] text-zinc-500">Costo asig.</div>
+                      <div className="text-sm font-bold text-red-400">{fmtPesos(costo)}</div>
+                    </div>
+                    {/* Margen */}
+                    <div className="text-right">
+                      <div className="text-[10px] text-zinc-500">Margen</div>
+                      <div className={`text-sm font-bold ${positivo ? 'text-green-400' : 'text-red-400'}`}>
+                        {fmtPesos(mg)} <span className="text-[10px]">({mgPct}%)</span>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ── BLOQUE 4: PLANES ── */}
+      <div>
+        <BloqueTitulo>Planes</BloqueTitulo>
+        <div className="bg-surface border border-border rounded-2xl p-5">
           <div className="space-y-3.5">
             {porPlan.filter(p => p.count > 0).length === 0 ? (
               <p className="text-xs text-zinc-600 italic">Sin datos</p>
@@ -419,81 +471,148 @@ export default function AdminMetricas() {
             )}
           </div>
         </div>
+      </div>
 
-        <div className="bg-surface border border-border rounded-2xl p-5">
-          <SectionTitle>Alumnos por coach</SectionTitle>
-          <div className="space-y-3.5">
-            {porCoach.length === 0 ? (
-              <p className="text-xs text-zinc-600 italic">Sin datos</p>
+      {/* ── BLOQUE 5: OPERACIÓN ── */}
+      <div>
+        <BloqueTitulo>Operación</BloqueTitulo>
+        <div className="space-y-4">
+
+          {/* Asistencia + ocupación */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="bg-surface border border-border rounded-2xl p-5">
+              <SectionTitle>Tasa de asistencia semanal</SectionTitle>
+              <div className="flex items-center gap-4">
+                <div className="relative shrink-0">
+                  <Ring pct={asistencia.tasa ?? 0} color="#22c55e" size={80} stroke={8} />
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <span className="text-lg font-black text-foreground">
+                      {asistencia.tasa !== null ? `${asistencia.tasa}%` : '—'}
+                    </span>
+                  </div>
+                </div>
+                <div className="flex gap-4 flex-1 flex-wrap">
+                  <div>
+                    <div className="text-2xl font-black text-green-400">{asistencia.asistieron}</div>
+                    <div className="text-xs text-zinc-500">asistencias</div>
+                  </div>
+                  <div>
+                    <div className="text-2xl font-black text-red-400">{asistencia.total - asistencia.asistieron}</div>
+                    <div className="text-xs text-zinc-500">inasistencias</div>
+                  </div>
+                  {asistencia.total === 0 && <div className="text-xs text-zinc-600 italic self-center">Sin registros</div>}
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-surface border border-border rounded-2xl p-5">
+              <SectionTitle>Tasa de ocupación del gimnasio</SectionTitle>
+              <div className="flex items-center gap-4">
+                <div className="relative shrink-0">
+                  <Ring pct={tasaOcupacion ?? 0} color="#06b6d4" size={80} stroke={8} />
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <span className="text-lg font-black text-foreground">{tasaOcupacion}%</span>
+                  </div>
+                </div>
+                <div className="flex gap-4 flex-1 flex-wrap">
+                  <div>
+                    <div className="text-2xl font-black text-cyan-400">{alumnos.activos}</div>
+                    <div className="text-xs text-zinc-500">activos</div>
+                  </div>
+                  <div>
+                    <div className="text-2xl font-black text-zinc-400">{capacidadMax - alumnos.activos}</div>
+                    <div className="text-xs text-zinc-500">cupos libres</div>
+                  </div>
+                  <div className="text-[10px] text-zinc-500 self-end">máx: {capacidadMax}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Cancelaciones */}
+          <div className="bg-surface border border-border rounded-2xl p-5">
+            <SectionTitle>Cancelaciones y reagendamientos — mes actual</SectionTitle>
+            {excepciones.total === 0 ? (
+              <div className="text-center py-4">
+                <div className="text-xs font-bold text-green-500 uppercase tracking-widest mb-1">Sin novedades</div>
+                <div className="text-sm text-zinc-500">Sin cancelaciones ni reagendamientos este mes</div>
+              </div>
             ) : (
-              porCoach.map(({ nombre, count, color }, i) => {
-                const paleta = color !== null && color !== undefined
-                  ? COLORES_COACH[Number(color) % COLORES_COACH.length]
-                  : COLORES_COACH[i % COLORES_COACH.length]
-                return (
-                  <BarRow key={nombre} label={nombre} value={count} max={maxCoach}
-                    colorHex={paleta.border} />
-                )
-              })
+              <>
+                <div className="grid grid-cols-2 gap-4 mb-4">
+                  {[
+                    { label: 'Cancelaciones',   value: excepciones.cancelaciones,  color: '#f87171', sub: 'clases canceladas' },
+                    { label: 'Reagendamientos', value: excepciones.reagendamientos, color: '#fbbf24', sub: 'clases movidas' },
+                  ].map(({ label, value, color, sub }) => (
+                    <div key={label} className="bg-hover border border-border rounded-xl p-4 text-center"
+                      style={{ borderTop: `2px solid ${color}40` }}>
+                      <div className="text-3xl font-black" style={{ color }}>{value}</div>
+                      <div className="text-xs font-semibold text-zinc-500 mt-1">{label}</div>
+                      <div className="text-[10px] text-zinc-600">{sub}</div>
+                    </div>
+                  ))}
+                </div>
+                <div className="h-3 bg-hover-md rounded-full overflow-hidden flex">
+                  <div className="h-full bg-red-500/70 rounded-l-full"
+                    style={{ width: `${Math.round(excepciones.cancelaciones / excepciones.total * 100)}%` }} />
+                  <div className="h-full bg-amber-400/70 rounded-r-full"
+                    style={{ width: `${Math.round(excepciones.reagendamientos / excepciones.total * 100)}%` }} />
+                </div>
+                <div className="flex justify-between mt-1.5">
+                  <span className="text-[10px] text-red-400">Cancelaciones</span>
+                  <span className="text-[10px] text-amber-400">Reagendamientos</span>
+                </div>
+              </>
             )}
+          </div>
+
+          {/* Ocupación por bloque horario */}
+          <div className="bg-surface border border-border rounded-2xl p-5">
+            <SectionTitle>Ocupación por bloque horario</SectionTitle>
+            <GraficoOcupacion
+              porHora={data.ocupacionPorHora || []}
+              porDiaHora={data.ocupacionPorDiaHora || []}
+              capacidad={data.capacidadPorBloque || 16}
+            />
           </div>
         </div>
       </div>
 
-      {/* Fila 4: Cancelaciones vs Reagendamientos */}
-      <div className="bg-surface border border-border rounded-2xl p-5">
-        <SectionTitle>Cancelaciones y reagendamientos — mes actual</SectionTitle>
-
-        {excepciones.total === 0 ? (
-          <div className="text-center py-6">
-            <div className="text-xs font-bold text-green-500 uppercase tracking-widest mb-2">Sin novedades</div>
-            <div className="text-sm text-zinc-500 font-medium">Sin cancelaciones ni reagendamientos esta semana</div>
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 gap-4">
-            {[
-              { label: 'Cancelaciones',   value: excepciones.cancelaciones,   color: '#f87171',
-                sub: 'clases canceladas este mes' },
-              { label: 'Reagendamientos', value: excepciones.reagendamientos,  color: '#fbbf24',
-                sub: 'clases movidas este mes' },
-            ].map(({ label, value, color, sub }) => (
-              <div key={label} className="bg-hover border border-border rounded-xl p-4 text-center"
-                style={{ borderTop: `2px solid ${color}40` }}>
-                <div className="text-3xl font-black" style={{ color }}>{value}</div>
-                <div className="text-xs font-semibold text-zinc-500 mt-2">{label}</div>
-                <div className="text-[10px] text-zinc-600 mt-0.5">{sub}</div>
+      {/* ── BLOQUE 6: PROGRESO ── */}
+      <div>
+        <BloqueTitulo>Progreso</BloqueTitulo>
+        <div className="bg-surface border border-border rounded-2xl p-5">
+          <SectionTitle>Adherencia a rutina</SectionTitle>
+          <p className="text-xs text-zinc-500 mb-4">
+            Porcentaje de clases asistidas en las que el coach registró la rutina completa.
+          </p>
+          <div className="flex items-center gap-6">
+            <div className="relative shrink-0">
+              <Ring pct={adherenciaRutina ?? 0} color="#a78bfa" size={88} stroke={9} />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span className="text-xl font-black text-foreground">
+                  {adherenciaRutina !== null ? `${adherenciaRutina}%` : '—'}
+                </span>
               </div>
-            ))}
-          </div>
-        )}
-
-        {excepciones.total > 0 && (
-          <div className="mt-4">
-            <div className="h-3 bg-hover-md rounded-full overflow-hidden flex">
-              <div className="h-full bg-red-500/70 rounded-l-full transition-all duration-700"
-                style={{ width: `${Math.round(excepciones.cancelaciones / excepciones.total * 100)}%` }} />
-              <div className="h-full bg-amber-400/70 rounded-r-full transition-all duration-700"
-                style={{ width: `${Math.round(excepciones.reagendamientos / excepciones.total * 100)}%` }} />
             </div>
-            <div className="flex justify-between mt-1.5">
-              <span className="text-[10px] text-red-400">Cancelaciones</span>
-              <span className="text-[10px] text-amber-400">Reagendamientos</span>
+            <div className="space-y-3 flex-1">
+              <div>
+                <div className="text-2xl font-black text-purple-400">{sesionesRutina}</div>
+                <div className="text-xs text-zinc-500">rutinas registradas este mes</div>
+              </div>
+              <div>
+                <div className="text-2xl font-black text-zinc-400">{asistieronMes ?? 0}</div>
+                <div className="text-xs text-zinc-500">clases asistidas este mes</div>
+              </div>
             </div>
           </div>
-        )}
+        </div>
       </div>
 
-      {/* Fila 5: Ocupación por horario */}
-      <div className="bg-surface border border-border rounded-2xl p-5">
-        <SectionTitle>Ocupación por bloque horario</SectionTitle>
-        <GraficoOcupacion
-          porHora={data.ocupacionPorHora || []}
-          porDiaHora={data.ocupacionPorDiaHora || []}
-          capacidad={data.capacidadPorBloque || 16}
-        />
-      </div>
-
-      {/* Fila 6: Comparación mensual */}
+      {/* ── EVOLUCIÓN MENSUAL (histórico) ── */}
+      {historico.length > 0 && (
+        <div className="bg-surface border border-border rounded-2xl p-5">
+          <SectionTitle>Evolución mensual — últimos 6 meses</SectionTitle>
       {historico.length > 0 && (
         <div className="bg-surface border border-border rounded-2xl p-5">
           <SectionTitle>Evolución mensual — últimos 6 meses</SectionTitle>

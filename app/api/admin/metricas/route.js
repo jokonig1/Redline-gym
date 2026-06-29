@@ -205,30 +205,87 @@ export async function GET() {
     }
   })
 
-  const CAPACIDAD_MAX = 300
+  const CAPACIDAD_MAX  = 300
+  const COSTOS_FIJOS   = 4037765  // coaches + arriendo + servicios
+
+  // ── Financiero ───────────────────────────────────────────────────────────────
+  const margen        = ingresosMes - COSTOS_FIJOS
+  const margenPct     = ingresosMes > 0 ? Math.round((margen / ingresosMes) * 100) : 0
+  const precioPromedio = activos.length > 0 ? Math.round(ingresosMes / activos.length) : 0
+  const puntoEquilibrio = precioPromedio > 0 ? Math.ceil(COSTOS_FIJOS / precioPromedio) : null
+
+  // ── Tasa de retención = activos / total ───────────────────────────────────────
+  const tasaRetencion = (alumnos || []).length > 0
+    ? Math.round((activos.length / (alumnos || []).length) * 100)
+    : null
+
+  // ── Margen por coach ─────────────────────────────────────────────────────────
+  const nCoaches = (coaches || []).length || 1
+  const costoPorCoach = Math.round(COSTOS_FIJOS / nCoaches)
+
+  const margenPorCoach = porCoachArr.map(c => {
+    const coachProfile = (coaches || []).find(co => co.nombre === c.nombre)
+    const revenueCoach = activos
+      .filter(a => a.coach_id === coachProfile?.id)
+      .reduce((sum, a) => sum + precioAlumno(a), 0)
+    return {
+      ...c,
+      revenue:     revenueCoach,
+      costo:       costoPorCoach,
+      margen:      revenueCoach - costoPorCoach,
+      margenPct:   revenueCoach > 0 ? Math.round(((revenueCoach - costoPorCoach) / revenueCoach) * 100) : 0,
+    }
+  }).sort((a, b) => b.margen - a.margen)
+
+  // ── Adherencia a rutina = sesiones / asistencias confirmadas ─────────────────
+  const adherenciaRutina = asistieron > 0
+    ? Math.round(((sesiones || []).length / asistieron) * 100)
+    : null
 
   return Response.json({
-    semana:      { inicio: semanaInicio, fin: semanaFin },
-    capacidadMax: CAPACIDAD_MAX,
+    semana:        { inicio: semanaInicio, fin: semanaFin },
+    capacidadMax:  CAPACIDAD_MAX,
+
+    // Bloque Alumnos
     alumnos: {
-      total:        (alumnos || []).length,
-      activos:      activos.length,
-      inactivos:    inactivos.length,
-      conHorario:   alumnosConHorario,
+      total:         (alumnos || []).length,
+      activos:       activos.length,
+      inactivos:     inactivos.length,
+      conHorario:    alumnosConHorario,
       nuevosEsteMes: (alumnosNuevosMes || []).length,
     },
-    asistencia:  { total: totalAsistSem, asistieron: asistieronSem, tasa: tasaAsist },
-    excepciones: { cancelaciones, reagendamientos, total: cancelaciones + reagendamientos },
-    porPlan:     Object.entries(porPlan).map(([plan, count]) => ({ plan, count })),
-    porCoach:    porCoachArr,
-    clasesEstaSemana:     asistieron,
+    tasaRetencion,
+
+    // Bloque Financiero
     ingresosMes,
     ingresosMesAnterior,
-    sesionesRutina:       (sesiones || []).length,
-    coaches:              (coaches || []).length,
+    costosFijos:    COSTOS_FIJOS,
+    margen,
+    margenPct,
+    precioPromedio,
+    puntoEquilibrio,
+
+    // Bloque Coaches
+    porCoach:       margenPorCoach,
+    coaches:        (coaches || []).length,
+
+    // Bloque Planes
+    porPlan:        Object.entries(porPlan).map(([plan, count]) => ({ plan, count })),
+
+    // Bloque Operación
+    asistencia:     { total: totalAsistSem, asistieron: asistieronSem, tasa: tasaAsist },
+    excepciones:    { cancelaciones, reagendamientos, total: cancelaciones + reagendamientos },
+    clasesEstaSemana: asistieron,
     ocupacionPorHora,
     ocupacionPorDiaHora,
-    capacidadPorBloque:   16,
+    capacidadPorBloque: 16,
+
+    // Bloque Progreso
+    sesionesRutina: (sesiones || []).length,
+    adherenciaRutina,
+    asistieronMes:  asistieron,
+
+    // Histórico
     historico,
   })
 }
