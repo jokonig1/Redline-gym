@@ -328,7 +328,86 @@ export default function AdminMetricas() {
         </div>
       </div>
 
-      {/* ── BLOQUE 2: FINANCIERO ── */}
+      {/* ── BLOQUE 2: OPERACIÓN ── */}
+      <div>
+        <BloqueTitulo>Operación</BloqueTitulo>
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="bg-surface border border-border rounded-2xl p-5">
+              <SectionTitle>Tasa de asistencia semanal</SectionTitle>
+              <div className="flex items-center gap-4">
+                <div className="relative shrink-0">
+                  <Ring pct={asistencia.tasa ?? 0} color="#22c55e" size={80} stroke={8} />
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <span className="text-lg font-black text-foreground">
+                      {asistencia.tasa !== null ? `${asistencia.tasa}%` : '—'}
+                    </span>
+                  </div>
+                </div>
+                <div className="flex gap-4 flex-1 flex-wrap">
+                  <div><div className="text-2xl font-black text-green-400">{asistencia.asistieron}</div><div className="text-xs text-zinc-500">asistencias</div></div>
+                  <div><div className="text-2xl font-black text-red-400">{asistencia.total - asistencia.asistieron}</div><div className="text-xs text-zinc-500">inasistencias</div></div>
+                  {asistencia.total === 0 && <div className="text-xs text-zinc-600 italic self-center">Sin registros</div>}
+                </div>
+              </div>
+            </div>
+            <div className="bg-surface border border-border rounded-2xl p-5">
+              <SectionTitle>Tasa de ocupación del gimnasio</SectionTitle>
+              <div className="flex items-center gap-4">
+                <div className="relative shrink-0">
+                  <Ring pct={tasaOcupacion ?? 0} color="#06b6d4" size={80} stroke={8} />
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <span className="text-lg font-black text-foreground">{tasaOcupacion}%</span>
+                  </div>
+                </div>
+                <div className="flex gap-4 flex-1 flex-wrap">
+                  <div><div className="text-2xl font-black text-cyan-400">{alumnos.activos}</div><div className="text-xs text-zinc-500">activos</div></div>
+                  <div><div className="text-2xl font-black text-zinc-400">{capacidadMax - alumnos.activos}</div><div className="text-xs text-zinc-500">cupos libres</div></div>
+                  <div className="text-[10px] text-zinc-500 self-end">máx: {capacidadMax}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="bg-surface border border-border rounded-2xl p-5">
+            <SectionTitle>Cancelaciones y reagendamientos — mes actual</SectionTitle>
+            {excepciones.total === 0 ? (
+              <div className="text-center py-4">
+                <div className="text-xs font-bold text-green-500 uppercase tracking-widest mb-1">Sin novedades</div>
+                <div className="text-sm text-zinc-500">Sin cancelaciones ni reagendamientos este mes</div>
+              </div>
+            ) : (
+              <>
+                <div className="grid grid-cols-2 gap-4 mb-4">
+                  {[
+                    { label: 'Cancelaciones',   value: excepciones.cancelaciones,  color: '#f87171', sub: 'clases canceladas' },
+                    { label: 'Reagendamientos', value: excepciones.reagendamientos, color: '#fbbf24', sub: 'clases movidas' },
+                  ].map(({ label, value, color, sub }) => (
+                    <div key={label} className="bg-hover border border-border rounded-xl p-4 text-center" style={{ borderTop: `2px solid ${color}40` }}>
+                      <div className="text-3xl font-black" style={{ color }}>{value}</div>
+                      <div className="text-xs font-semibold text-zinc-500 mt-1">{label}</div>
+                      <div className="text-[10px] text-zinc-600">{sub}</div>
+                    </div>
+                  ))}
+                </div>
+                <div className="h-3 bg-hover-md rounded-full overflow-hidden flex">
+                  <div className="h-full bg-red-500/70 rounded-l-full" style={{ width: `${Math.round(excepciones.cancelaciones / excepciones.total * 100)}%` }} />
+                  <div className="h-full bg-amber-400/70 rounded-r-full" style={{ width: `${Math.round(excepciones.reagendamientos / excepciones.total * 100)}%` }} />
+                </div>
+                <div className="flex justify-between mt-1.5">
+                  <span className="text-[10px] text-red-400">Cancelaciones</span>
+                  <span className="text-[10px] text-amber-400">Reagendamientos</span>
+                </div>
+              </>
+            )}
+          </div>
+          <div className="bg-surface border border-border rounded-2xl p-5">
+            <SectionTitle>Ocupación por bloque horario</SectionTitle>
+            <GraficoOcupacion porHora={data.ocupacionPorHora || []} porDiaHora={data.ocupacionPorDiaHora || []} capacidad={data.capacidadPorBloque || 16} />
+          </div>
+        </div>
+      </div>
+
+      {/* ── BLOQUE 3: FINANCIERO ── */}
       <div>
         <BloqueTitulo>Financiero</BloqueTitulo>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -469,111 +548,6 @@ export default function AdminMetricas() {
                     colorHex={PLAN_COLORS[plan] || '#52525b'} />
                 ))
             )}
-          </div>
-        </div>
-      </div>
-
-      {/* ── BLOQUE 5: OPERACIÓN ── */}
-      <div>
-        <BloqueTitulo>Operación</BloqueTitulo>
-        <div className="space-y-4">
-
-          {/* Asistencia + ocupación */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="bg-surface border border-border rounded-2xl p-5">
-              <SectionTitle>Tasa de asistencia semanal</SectionTitle>
-              <div className="flex items-center gap-4">
-                <div className="relative shrink-0">
-                  <Ring pct={asistencia.tasa ?? 0} color="#22c55e" size={80} stroke={8} />
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="text-lg font-black text-foreground">
-                      {asistencia.tasa !== null ? `${asistencia.tasa}%` : '—'}
-                    </span>
-                  </div>
-                </div>
-                <div className="flex gap-4 flex-1 flex-wrap">
-                  <div>
-                    <div className="text-2xl font-black text-green-400">{asistencia.asistieron}</div>
-                    <div className="text-xs text-zinc-500">asistencias</div>
-                  </div>
-                  <div>
-                    <div className="text-2xl font-black text-red-400">{asistencia.total - asistencia.asistieron}</div>
-                    <div className="text-xs text-zinc-500">inasistencias</div>
-                  </div>
-                  {asistencia.total === 0 && <div className="text-xs text-zinc-600 italic self-center">Sin registros</div>}
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-surface border border-border rounded-2xl p-5">
-              <SectionTitle>Tasa de ocupación del gimnasio</SectionTitle>
-              <div className="flex items-center gap-4">
-                <div className="relative shrink-0">
-                  <Ring pct={tasaOcupacion ?? 0} color="#06b6d4" size={80} stroke={8} />
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="text-lg font-black text-foreground">{tasaOcupacion}%</span>
-                  </div>
-                </div>
-                <div className="flex gap-4 flex-1 flex-wrap">
-                  <div>
-                    <div className="text-2xl font-black text-cyan-400">{alumnos.activos}</div>
-                    <div className="text-xs text-zinc-500">activos</div>
-                  </div>
-                  <div>
-                    <div className="text-2xl font-black text-zinc-400">{capacidadMax - alumnos.activos}</div>
-                    <div className="text-xs text-zinc-500">cupos libres</div>
-                  </div>
-                  <div className="text-[10px] text-zinc-500 self-end">máx: {capacidadMax}</div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Cancelaciones */}
-          <div className="bg-surface border border-border rounded-2xl p-5">
-            <SectionTitle>Cancelaciones y reagendamientos — mes actual</SectionTitle>
-            {excepciones.total === 0 ? (
-              <div className="text-center py-4">
-                <div className="text-xs font-bold text-green-500 uppercase tracking-widest mb-1">Sin novedades</div>
-                <div className="text-sm text-zinc-500">Sin cancelaciones ni reagendamientos este mes</div>
-              </div>
-            ) : (
-              <>
-                <div className="grid grid-cols-2 gap-4 mb-4">
-                  {[
-                    { label: 'Cancelaciones',   value: excepciones.cancelaciones,  color: '#f87171', sub: 'clases canceladas' },
-                    { label: 'Reagendamientos', value: excepciones.reagendamientos, color: '#fbbf24', sub: 'clases movidas' },
-                  ].map(({ label, value, color, sub }) => (
-                    <div key={label} className="bg-hover border border-border rounded-xl p-4 text-center"
-                      style={{ borderTop: `2px solid ${color}40` }}>
-                      <div className="text-3xl font-black" style={{ color }}>{value}</div>
-                      <div className="text-xs font-semibold text-zinc-500 mt-1">{label}</div>
-                      <div className="text-[10px] text-zinc-600">{sub}</div>
-                    </div>
-                  ))}
-                </div>
-                <div className="h-3 bg-hover-md rounded-full overflow-hidden flex">
-                  <div className="h-full bg-red-500/70 rounded-l-full"
-                    style={{ width: `${Math.round(excepciones.cancelaciones / excepciones.total * 100)}%` }} />
-                  <div className="h-full bg-amber-400/70 rounded-r-full"
-                    style={{ width: `${Math.round(excepciones.reagendamientos / excepciones.total * 100)}%` }} />
-                </div>
-                <div className="flex justify-between mt-1.5">
-                  <span className="text-[10px] text-red-400">Cancelaciones</span>
-                  <span className="text-[10px] text-amber-400">Reagendamientos</span>
-                </div>
-              </>
-            )}
-          </div>
-
-          {/* Ocupación por bloque horario */}
-          <div className="bg-surface border border-border rounded-2xl p-5">
-            <SectionTitle>Ocupación por bloque horario</SectionTitle>
-            <GraficoOcupacion
-              porHora={data.ocupacionPorHora || []}
-              porDiaHora={data.ocupacionPorDiaHora || []}
-              capacidad={data.capacidadPorBloque || 16}
-            />
           </div>
         </div>
       </div>
