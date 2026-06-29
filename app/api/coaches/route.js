@@ -10,6 +10,6 @@ export async function GET() {
     .in('rol', ['coach', 'admin'])
     .order('created_at', { ascending: true })
 
-  if (error) return Response.json({ error: error.message }, { status: 500 })
+  if (error) return Response.json({ error: 'Error al obtener los coaches' }, { status: 500 })
   return Response.json(data || [])
 }

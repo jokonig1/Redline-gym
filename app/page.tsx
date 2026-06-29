@@ -493,10 +493,16 @@ export default function LandingPage() {
           <span className="text-xs text-zinc-600 text-center">
             © {new Date().getFullYear()} RedLine · Entrenamiento · Rehabilitación · Bienestar
           </span>
-          <Link href="/login"
-            className="text-xs text-zinc-500 hover:text-foreground transition-colors font-medium">
-            Ingresar al sistema →
-          </Link>
+          <div className="flex items-center gap-4">
+            <Link href="/privacidad"
+              className="text-xs text-zinc-500 hover:text-foreground transition-colors">
+              Política de privacidad
+            </Link>
+            <Link href="/login"
+              className="text-xs text-zinc-500 hover:text-foreground transition-colors font-medium">
+              Ingresar al sistema →
+            </Link>
+          </div>
         </div>
       </footer>
 

@@ -39,6 +39,6 @@ export async function PUT(req) {
     .select('id, nombre, coach_id, coach:coach_id(id, nombre)')
     .single()
 
-  if (error) return Response.json({ error: error.message }, { status: 500 })
+  if (error) return Response.json({ error: 'Error al actualizar el perfil' }, { status: 500 })
   return Response.json(data)
 }
