@@ -613,9 +613,6 @@ export default function AdminMetricas() {
       {historico.length > 0 && (
         <div className="bg-surface border border-border rounded-2xl p-5">
           <SectionTitle>Evolución mensual — últimos 6 meses</SectionTitle>
-      {historico.length > 0 && (
-        <div className="bg-surface border border-border rounded-2xl p-5">
-          <SectionTitle>Evolución mensual — últimos 6 meses</SectionTitle>
 
           {/* Tabla comparativa */}
           <div className="overflow-x-auto">
