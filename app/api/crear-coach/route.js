@@ -1,11 +1,15 @@
 import { supabaseAdmin } from '@/lib/supabase/admin'
 import { requireAuth } from '@/lib/auth'
+import { crearCoachSchema, parseBody } from '@/lib/schemas'
 
 export async function POST(request) {
   const { response } = await requireAuth(['admin'])
   if (response) return response
 
-  const { nombre, email, password, color } = await request.json()
+  const { data: body, error: validationError } = parseBody(crearCoachSchema, await request.json())
+  if (validationError) return validationError
+
+  const { nombre, email, password, color } = body
 
   const { data, error } = await supabaseAdmin.auth.admin.createUser({
     email,
@@ -16,7 +20,7 @@ export async function POST(request) {
 
   if (error) return Response.json({ error: 'No se pudo crear la cuenta del coach' }, { status: 400 })
 
-  const userId = data.user.id
+  const userId   = data.user.id
   const colorVal = (color !== undefined && color !== null) ? color : 0
 
   const { error: profileError } = await supabaseAdmin
@@ -24,7 +28,6 @@ export async function POST(request) {
     .upsert({ id: userId, nombre, email, rol: 'coach', color: colorVal })
 
   if (profileError) {
-    // Revertir: eliminar el usuario auth si no se pudo crear el perfil
     await supabaseAdmin.auth.admin.deleteUser(userId)
     return Response.json({ error: 'Error al crear el perfil del coach' }, { status: 500 })
   }
