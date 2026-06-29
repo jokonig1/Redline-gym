@@ -1,10 +1,13 @@
 import { supabaseAdmin } from '@/lib/supabase/admin'
+import { requireAuth } from '@/lib/auth'
 
 /**
  * GET /api/alumno/peso?alumno_id=X
  * Devuelve el historial de peso del alumno ordenado por fecha.
  */
 export async function GET(req) {
+  const { response } = await requireAuth()
+  if (response) return response
   const { searchParams } = new URL(req.url)
   const alumno_id = searchParams.get('alumno_id')
   if (!alumno_id) return Response.json([], { status: 400 })
@@ -24,6 +27,8 @@ export async function GET(req) {
  * Body: { alumno_id, fecha, peso_kg, notas? }
  */
 export async function POST(req) {
+  const { response } = await requireAuth(['admin', 'coach'])
+  if (response) return response
   const { alumno_id, fecha, peso_kg, notas } = await req.json()
   if (!alumno_id || !peso_kg) {
     return Response.json({ error: 'alumno_id y peso_kg son requeridos' }, { status: 400 })
@@ -47,6 +52,8 @@ export async function POST(req) {
  * Elimina un registro de peso.
  */
 export async function DELETE(req) {
+  const { response } = await requireAuth(['admin', 'coach'])
+  if (response) return response
   const { searchParams } = new URL(req.url)
   const id = searchParams.get('id')
   if (!id) return Response.json({ error: 'id requerido' }, { status: 400 })

@@ -1,4 +1,5 @@
 import { supabaseAdmin } from '@/lib/supabase/admin'
+import { requireAuth } from '@/lib/auth'
 
 /**
  * GET /api/alumno/horarios?alumno_id=X
@@ -6,6 +7,8 @@ import { supabaseAdmin } from '@/lib/supabase/admin'
  * Usa supabaseAdmin para bypasear RLS (las tablas solo tienen permisos de coach/admin).
  */
 export async function GET(req) {
+  const { response } = await requireAuth()
+  if (response) return response
   const { searchParams } = new URL(req.url)
   const alumno_id = searchParams.get('alumno_id')
   if (!alumno_id) return Response.json({ horarios: [], excepciones: [] })

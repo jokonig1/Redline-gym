@@ -1,10 +1,13 @@
 import { supabaseAdmin } from '@/lib/supabase/admin'
+import { requireAuth } from '@/lib/auth'
 
 /**
  * GET /api/alumno/perfil?email=X
  * Devuelve el registro de alumnos que coincide con el email del alumno autenticado.
  */
 export async function GET(req) {
+  const { response } = await requireAuth()
+  if (response) return response
   const { searchParams } = new URL(req.url)
   const email = searchParams.get('email')
   if (!email) return Response.json(null)
@@ -24,6 +27,8 @@ export async function GET(req) {
  * Body: { email, coach_id }
  */
 export async function PUT(req) {
+  const { response } = await requireAuth()
+  if (response) return response
   const { email, coach_id } = await req.json()
   if (!email) return Response.json({ error: 'email requerido' }, { status: 400 })
 

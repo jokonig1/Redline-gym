@@ -1,3 +1,4 @@
+import { requireAuth } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 
 /**
@@ -5,6 +6,8 @@ import { supabaseAdmin } from '@/lib/supabase/admin'
  * Devuelve las rutinas predefinidas activas del coach.
  */
 export async function GET(req) {
+  const { response } = await requireAuth(['admin', 'coach'])
+  if (response) return response
   const { searchParams } = new URL(req.url)
   const coachId = searchParams.get('coach_id')
   if (!coachId) return Response.json([])
@@ -26,6 +29,8 @@ export async function GET(req) {
  * Body: { coach_id, nombre, ejercicios, orden }
  */
 export async function POST(req) {
+  const { response } = await requireAuth(['admin', 'coach'])
+  if (response) return response
   const body = await req.json()
   const { coach_id, nombre, ejercicios = [], orden = 0 } = body
 

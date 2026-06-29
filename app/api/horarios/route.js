@@ -1,3 +1,4 @@
+import { requireAuth } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 
 /**
@@ -7,6 +8,8 @@ import { supabaseAdmin } from '@/lib/supabase/admin'
  * pero los permisos de edición se controlan en el frontend (soloEditarCoachId).
  */
 export async function GET() {
+  const { response } = await requireAuth(['admin', 'coach'])
+  if (response) return response
   // Horarios con join a alumno y coach
   let { data: horarios, error: hErr } = await supabaseAdmin
     .from('alumno_horarios')

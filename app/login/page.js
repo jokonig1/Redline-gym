@@ -2,10 +2,12 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { useTheme } from '@/app/providers'
 
 export default function LoginPage() {
   const router = useRouter()
   const supabase = createClient()
+  const { theme } = useTheme()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -38,9 +40,13 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-sm">
-        <div className="mb-8 text-center">
-          <h1 className="text-4xl font-black tracking-widest text-red-600">RED<span className="text-foreground">LINE</span></h1>
-          <p className="text-zinc-500 text-sm mt-1 tracking-widest uppercase">Gimnasio Integral</p>
+        <div className="mb-8 text-center flex justify-center">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={theme === 'dark' ? '/logo_oscuro.png' : '/logo_claro.png'}
+            alt="RedLine"
+            className="h-12 w-auto object-contain"
+          />
         </div>
 
         <form onSubmit={handleLogin} className="space-y-4">

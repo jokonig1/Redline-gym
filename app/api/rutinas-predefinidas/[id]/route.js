@@ -1,3 +1,4 @@
+import { requireAuth } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 
 /**
@@ -5,6 +6,8 @@ import { supabaseAdmin } from '@/lib/supabase/admin'
  * Actualiza nombre y/o ejercicios de la rutina.
  */
 export async function PUT(req, { params }) {
+  const { response } = await requireAuth(['admin', 'coach'])
+  if (response) return response
   const { id } = params
   const body   = await req.json()
   const { nombre, ejercicios, orden } = body
@@ -30,6 +33,8 @@ export async function PUT(req, { params }) {
  * Marca la rutina como inactiva (soft delete).
  */
 export async function DELETE(req, { params }) {
+  const { response } = await requireAuth(['admin', 'coach'])
+  if (response) return response
   const { id } = params
 
   const { error } = await supabaseAdmin

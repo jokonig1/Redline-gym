@@ -1,3 +1,4 @@
+import { requireAuth } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 
 /**
@@ -6,6 +7,8 @@ import { supabaseAdmin } from '@/lib/supabase/admin'
  * Con alumno_horario_id  → devuelve el objeto único de ese slot (o null).
  */
 export async function GET(req) {
+  const { response } = await requireAuth(['admin', 'coach'])
+  if (response) return response
   const { searchParams } = new URL(req.url)
   const coachId         = searchParams.get('coach_id')
   const alumnoHorarioId = searchParams.get('alumno_horario_id')
@@ -35,6 +38,8 @@ export async function GET(req) {
  * Body: { alumno_id, coach_id, alumno_horario_id, fecha, hora, asistio, notas }
  */
 export async function POST(req) {
+  const { response } = await requireAuth(['admin', 'coach'])
+  if (response) return response
   const body = await req.json()
   const { alumno_id, coach_id, alumno_horario_id, fecha, hora, asistio, notas } = body
 

@@ -1,10 +1,14 @@
 import { supabaseAdmin } from '@/lib/supabase/admin'
+import { requireAuth } from '@/lib/auth'
 
 function toDateStr(d) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
 export async function GET() {
+  const { response } = await requireAuth(['admin'])
+  if (response) return response
+
   // Semana actual (lunes → sábado)
   const today = new Date()
   const dow   = today.getDay()

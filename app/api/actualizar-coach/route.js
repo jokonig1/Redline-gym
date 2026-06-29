@@ -1,6 +1,10 @@
 import { supabaseAdmin } from '@/lib/supabase/admin'
+import { requireAuth } from '@/lib/auth'
 
 export async function PATCH(request) {
+  const { response } = await requireAuth(['admin'])
+  if (response) return response
+
   const { id, nombre, telefono, color } = await request.json()
   if (!id) return Response.json({ error: 'Falta el id' }, { status: 400 })
 
@@ -13,6 +17,6 @@ export async function PATCH(request) {
     })
     .eq('id', id)
 
-  if (error) return Response.json({ error: error.message }, { status: 500 })
+  if (error) return Response.json({ error: 'Error al actualizar el coach' }, { status: 500 })
   return Response.json({ ok: true })
 }

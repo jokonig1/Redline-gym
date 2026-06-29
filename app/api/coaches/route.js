@@ -1,6 +1,9 @@
 import { supabaseAdmin } from '@/lib/supabase/admin'
+import { requireAuth } from '@/lib/auth'
 
 export async function GET() {
+  const { response } = await requireAuth()
+  if (response) return response
   const { data, error } = await supabaseAdmin
     .from('profiles')
     .select('id, nombre, color, rol')

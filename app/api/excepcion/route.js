@@ -1,3 +1,4 @@
+import { requireAuth } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 
 /**
@@ -5,6 +6,8 @@ import { supabaseAdmin } from '@/lib/supabase/admin'
  * Body: { alumno_horario_id, alumno_id, fecha_original, fecha_nueva, hora_nueva, motivo }
  */
 export async function POST(request) {
+  const { response } = await requireAuth(['admin', 'coach'])
+  if (response) return response
   const { alumno_horario_id, alumno_id, fecha_original, fecha_nueva, hora_nueva, motivo } =
     await request.json()
 
@@ -51,6 +54,8 @@ export async function POST(request) {
  * Body: { id }
  */
 export async function DELETE(request) {
+  const { response } = await requireAuth(['admin', 'coach'])
+  if (response) return response
   const { id } = await request.json()
   if (!id) return Response.json({ error: 'Falta el id' }, { status: 400 })
 

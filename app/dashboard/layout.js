@@ -107,12 +107,12 @@ export default function DashboardLayout({ children }) {
         {/* Logo + botón cerrar (solo móvil) */}
         <div className="p-5 border-b border-border flex items-center justify-between">
           <div>
-            <div className="text-2xl font-black tracking-widest text-red-600">
-              RED<span className="text-foreground">LINE</span>
-            </div>
-            <div className="text-[9px] text-zinc-500 tracking-[3px] uppercase mt-0.5">
-              Gimnasio Integral
-            </div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={theme === 'dark' ? '/logo_oscuro.png' : '/logo_claro.png'}
+              alt="RedLine"
+              className="h-8 w-auto object-contain"
+            />
           </div>
           <button
             onClick={() => setSidebarOpen(false)}

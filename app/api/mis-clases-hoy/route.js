@@ -1,3 +1,4 @@
+import { requireAuth } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 
 const DIAS = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado']
@@ -8,6 +9,8 @@ const DIAS = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 's
  * También incluye asistencias ya registradas para hoy.
  */
 export async function GET(req) {
+  const { response } = await requireAuth(['admin', 'coach'])
+  if (response) return response
   const { searchParams } = new URL(req.url)
   const coachId = searchParams.get('coach_id')
   if (!coachId) return Response.json({ error: 'coach_id requerido' }, { status: 400 })

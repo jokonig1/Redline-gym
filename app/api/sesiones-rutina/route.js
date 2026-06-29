@@ -1,3 +1,4 @@
+import { requireAuth } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 
 /**
@@ -7,6 +8,8 @@ import { supabaseAdmin } from '@/lib/supabase/admin'
  * Con rutina_nombre → devuelve solo la ÚLTIMA sesión de esa rutina (para pre-cargar form).
  */
 export async function GET(req) {
+  const { response } = await requireAuth(['admin', 'coach', 'alumno'])
+  if (response) return response
   const { searchParams } = new URL(req.url)
   const alumnoId     = searchParams.get('alumno_id')
   const rutinaNombre = searchParams.get('rutina_nombre')
@@ -39,6 +42,8 @@ export async function GET(req) {
  *          rutina_predefinida_id, ejercicios, notas }
  */
 export async function POST(req) {
+  const { response } = await requireAuth(['admin', 'coach'])
+  if (response) return response
   const body = await req.json()
   const {
     alumno_id, coach_id, alumno_horario_id,
