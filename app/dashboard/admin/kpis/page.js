@@ -1,7 +1,8 @@
 'use client'
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState } from 'react'
 import LoadingSpinner from '@/app/dashboard/_components/LoadingSpinner'
 import { COLORES_COACH } from '@/lib/constants'
+import ModalCostos from './ModalCostos'
 
 function Ring({ pct, color, size = 88, stroke = 9 }) {
   const r    = (size - stroke) / 2
@@ -17,18 +18,26 @@ function Ring({ pct, color, size = 88, stroke = 9 }) {
   )
 }
 
-function StatCard({ tag, label, value, sub, color = '#ef4444', note }) {
+function StatCard({ tag, label, value, sub, color = '#ef4444', note, onClick }) {
   const strLen   = String(value).length
   const fontSize = strLen > 10 ? 'text-xl' : strLen > 7 ? 'text-2xl' : 'text-3xl'
   return (
-    <div className="bg-surface border border-border rounded-2xl p-4 sm:p-5 flex flex-col justify-between h-36"
+    <div
+      onClick={onClick}
+      className={`bg-surface border border-border rounded-2xl p-4 sm:p-5 flex flex-col justify-between h-36 ${onClick ? 'cursor-pointer hover:border-red-500/50 hover:shadow-md transition-all' : ''}`}
       style={{ borderTop: `2px solid ${color}` }}>
       <div className="flex items-center justify-between">
         <span className="text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full"
           style={{ background: `${color}20`, color }}>
           {tag}
         </span>
-        {note && <span className="text-[10px] text-zinc-600">{note}</span>}
+        {onClick
+          ? <span className="text-[10px] text-zinc-500 flex items-center gap-0.5">
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              Editar
+            </span>
+          : note && <span className="text-[10px] text-zinc-600">{note}</span>
+        }
       </div>
       <div className={`${fontSize} font-black leading-tight`} style={{ color }}>{value}</div>
       <div>
@@ -170,8 +179,7 @@ function GraficoOcupacion({ porHora, porDiaHora, capacidad }) {
 
             return (
               <g key={hora}
-                onMouseEnter={ev => {
-                  const rect = ev.currentTarget.closest('svg').getBoundingClientRect()
+                onMouseEnter={() => {
                   setTooltip({ i, hora, count, nivel })
                 }}
                 style={{ cursor: 'pointer' }}
@@ -258,16 +266,18 @@ const PLAN_COLORS = {
 }
 
 export default function AdminMetricas() {
-  const [data,    setData]    = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [error,   setError]   = useState('')
+  const [data,         setData]         = useState(null)
+  const [loading,      setLoading]      = useState(true)
+  const [error,        setError]        = useState('')
+  const [modalCostos,  setModalCostos]  = useState(false)
+  const [refetchKey,   setRefetchKey]   = useState(0)
 
   useEffect(() => {
     fetch('/api/admin/metricas')
       .then(r => r.ok ? r.json() : Promise.reject())
       .then(d => { setData(d); setLoading(false) })
       .catch(() => { setError('Error al cargar métricas.'); setLoading(false) })
-  }, [])
+  }, [refetchKey])
 
   if (loading) return <LoadingSpinner />
   if (error)   return <div className="text-red-400 text-sm">{error}</div>
@@ -442,7 +452,8 @@ export default function AdminMetricas() {
           })()}
 
           <StatCard tag="Costos fijos" label="Coaches + arriendo + servicios"
-            value={fmtPesos(costosFijos)} color="#f87171" />
+            value={fmtPesos(costosFijos)} color="#f87171"
+            onClick={() => setModalCostos(true)} />
 
           {/* Margen */}
           {(() => {
@@ -590,7 +601,7 @@ export default function AdminMetricas() {
 
           {/* Tabla comparativa */}
           <div className="overflow-x-auto">
-            <table className="w-full text-sm min-w-[520px]">
+            <table className="w-full text-sm min-w-130">
               <thead>
                 <tr className="border-b border-border">
                   <th className="text-left text-[10px] text-zinc-500 uppercase tracking-wider pb-3 font-medium">Métrica</th>
@@ -692,6 +703,42 @@ export default function AdminMetricas() {
                   })}
                 </tr>
 
+                {/* Costos */}
+                <tr>
+                  <td className="py-3 pr-4 text-zinc-500 text-xs">Costos</td>
+                  {historico.map((m, i) => {
+                    const prev = i > 0 ? historico[i-1].costos : null
+                    const diff = prev !== null ? m.costos - prev : null
+                    const pct  = prev > 0 ? Math.round(Math.abs(diff) / prev * 100) : null
+                    return (
+                      <td key={m.key} className="text-center py-3 px-2">
+                        <div className="text-xs font-black text-red-400">{m.costos != null ? fmtPesos(m.costos) : '—'}</div>
+                        {diff !== null && diff !== 0 && pct !== null && (
+                          <div className={`text-[10px] font-bold ${diff > 0 ? 'text-red-400' : 'text-green-400'}`}>
+                            {diff > 0 ? '↑' : '↓'}{pct}%
+                          </div>
+                        )}
+                      </td>
+                    )
+                  })}
+                </tr>
+
+                {/* Margen */}
+                <tr>
+                  <td className="py-3 pr-4 text-zinc-500 text-xs">Margen</td>
+                  {historico.map(m => {
+                    const mg = m.margen
+                    const positivo = mg != null && mg >= 0
+                    return (
+                      <td key={m.key} className="text-center py-3 px-2">
+                        <div className={`text-xs font-black ${positivo ? 'text-green-400' : 'text-red-400'}`}>
+                          {mg != null ? fmtPesos(mg) : '—'}
+                        </div>
+                      </td>
+                    )
+                  })}
+                </tr>
+
               </tbody>
             </table>
           </div>
@@ -727,6 +774,12 @@ export default function AdminMetricas() {
           </div>
         </div>
       )}
+
+      <ModalCostos
+        open={modalCostos}
+        onClose={() => setModalCostos(false)}
+        onSaved={() => setRefetchKey(k => k + 1)}
+      />
 
     </div>
   )

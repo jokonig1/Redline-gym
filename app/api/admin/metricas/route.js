@@ -38,6 +38,7 @@ export async function GET() {
     { data: sesiones },
     { data: alumnosNuevosMes },
     { data: asistenciasHistoricas },
+    { data: costosRegistros },
   ] = await Promise.all([
     supabaseAdmin.from('alumnos').select('id, activo, plan, tipo_clase, coach_id, created_at'),
     supabaseAdmin.from('alumno_horarios').select('alumno_id, dia, hora').eq('activo', true),
@@ -63,6 +64,12 @@ export async function GET() {
       .select('fecha, asistio')
       .gte('fecha', hace6mesesStr)
       .lte('fecha', mesActual),
+    supabaseAdmin.from('costos_mensuales')
+      .select('año, mes, total')
+      .order('año', { ascending: true })
+      .order('mes', { ascending: true })
+      .then(({ data }) => ({ data }))
+      .catch(() => ({ data: null })),
   ])
 
   // Asistencias de la semana para la tasa semanal
@@ -166,6 +173,20 @@ export async function GET() {
   const activosMesAnterior = activos.filter(a => new Date(a.created_at) < inicioMes)
   const ingresosMesAnterior = activosMesAnterior.reduce((sum, a) => sum + precioAlumno(a), 0)
 
+  const CAPACIDAD_MAX  = 300
+  const COSTOS_DEFAULT = 3190659  // suma de ítems predeterminados
+
+  function getCostosForMonth(año, mes, registros) {
+    if (!registros || registros.length === 0) return COSTOS_DEFAULT
+    const exact = registros.find(r => r.año === año && r.mes === mes)
+    if (exact) return exact.total
+    // Registro previo más reciente (registros ya vienen ordenados asc)
+    const prev = registros
+      .filter(r => r.año < año || (r.año === año && r.mes < mes))
+      .slice(-1)[0]
+    return prev?.total ?? COSTOS_DEFAULT
+  }
+
   // ── Histórico mensual (últimos 6 meses) ──────────────────────────────────────
   const mesesLabel = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic']
 
@@ -194,6 +215,7 @@ export async function GET() {
     // Ingresos estimados ese mes
     const ingresos = alumnosMes.reduce((sum, a) => sum + precioAlumno(a), 0)
 
+    const costos = getCostosForMonth(year, month + 1, costosRegistros)
     return {
       mes:    mesesLabel[month],
       key,
@@ -202,11 +224,12 @@ export async function GET() {
       inasistencias,
       acumulados,
       ingresos,
+      costos,
+      margen: ingresos - costos,
     }
   })
 
-  const CAPACIDAD_MAX  = 300
-  const COSTOS_FIJOS   = 4037765  // coaches + arriendo + servicios
+  const COSTOS_FIJOS = getCostosForMonth(today.getFullYear(), today.getMonth() + 1, costosRegistros)
 
   // ── Financiero ───────────────────────────────────────────────────────────────
   const margen        = ingresosMes - COSTOS_FIJOS
