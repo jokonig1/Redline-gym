@@ -743,27 +743,33 @@ export default function AdminMetricas() {
             </table>
           </div>
 
-          {/* Mini barras visuales para alumnos acumulados */}
+          {/* Barras visuales para alumnos por mes */}
           <div className="mt-5 pt-4 border-t border-border">
-            <div className="text-[10px] text-zinc-500 uppercase tracking-wider mb-3">Total alumnos por mes</div>
-            <div className="flex items-end gap-2 h-16">
+            <div className="text-[10px] text-zinc-500 uppercase tracking-wider mb-4">Alumnos por mes</div>
+            <div className="flex items-end gap-3" style={{ height: 140 }}>
               {(() => {
                 const max = Math.max(...historico.map(m => m.acumulados), 1)
                 return historico.map((m, i) => {
-                  const h = Math.max((m.acumulados / max) * 100, 4)
+                  const pct   = m.acumulados > 0 ? (m.acumulados / max) * 100 : 0
                   const esActual = i === historico.length - 1
                   return (
-                    <div key={m.key} className="flex-1 flex flex-col items-center gap-1">
-                      <div className="text-[9px] text-zinc-500 font-bold">{m.acumulados}</div>
+                    <div key={m.key} className="flex-1 flex flex-col items-center gap-1.5 h-full justify-end">
+                      {m.acumulados > 0 && (
+                        <div className={`text-[10px] font-black ${esActual ? 'text-red-400' : 'text-zinc-400'}`}>
+                          {m.acumulados}
+                        </div>
+                      )}
                       <div
-                        className="w-full rounded-t-sm transition-all duration-700"
+                        className="w-full rounded-t-md transition-all duration-700"
                         style={{
-                          height: `${h}%`,
-                          background: esActual ? '#ef4444' : '#ef444440',
-                          minHeight: 4,
+                          height: m.acumulados > 0 ? `${pct}%` : 3,
+                          background: esActual
+                            ? '#ef4444'
+                            : m.acumulados > 0 ? '#ef444460' : '#ffffff0a',
+                          minHeight: m.acumulados > 0 ? 12 : 3,
                         }}
                       />
-                      <div className={`text-[9px] uppercase font-bold ${esActual ? 'text-red-500' : 'text-zinc-500'}`}>
+                      <div className={`text-[9px] uppercase font-bold tracking-wider ${esActual ? 'text-red-500' : 'text-zinc-500'}`}>
                         {m.mes}
                       </div>
                     </div>

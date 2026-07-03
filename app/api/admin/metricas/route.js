@@ -169,9 +169,9 @@ export async function GET() {
 
   const ingresosMes = activos.reduce((sum, a) => sum + precioAlumno(a), 0)
 
-  // Mes anterior: alumnos activos que ya existían antes del inicio de este mes
-  const activosMesAnterior = activos.filter(a => new Date(a.created_at) < inicioMes)
-  const ingresosMesAnterior = activosMesAnterior.reduce((sum, a) => sum + precioAlumno(a), 0)
+  // Mes anterior: todos los alumnos que existían antes del inicio de este mes (incluyendo los que se dieron de baja)
+  const alumnosMesAnterior = (alumnos || []).filter(a => new Date(a.created_at) < inicioMes)
+  const ingresosMesAnterior = alumnosMesAnterior.reduce((sum, a) => sum + precioAlumno(a), 0)
 
   const CAPACIDAD_MAX  = 300
   const COSTOS_DEFAULT = 3190659  // suma de ítems predeterminados
@@ -207,13 +207,14 @@ export async function GET() {
     const clasesRealizadas = asistMes.filter(a => a.asistio).length
     const inasistencias    = asistMes.filter(a => !a.asistio).length
 
-    // Acumulado de alumnos activos al final de ese mes
+    // Alumnos al final de ese mes
     const fin = new Date(year, month + 1, 0) // último día del mes
     const alumnosMes = (alumnos || []).filter(a => new Date(a.created_at) <= fin)
-    const acumulados = alumnosMes.length
+    const esActual = year === today.getFullYear() && month === today.getMonth()
+    const acumulados = esActual ? activos.length : alumnosMes.length
 
-    // Ingresos estimados ese mes
-    const ingresos = alumnosMes.reduce((sum, a) => sum + precioAlumno(a), 0)
+    // Ingresos estimados ese mes (mes actual: solo activos; meses pasados: todos los registrados)
+    const ingresos = esActual ? ingresosMes : alumnosMes.reduce((sum, a) => sum + precioAlumno(a), 0)
 
     const costos = getCostosForMonth(year, month + 1, costosRegistros)
     return {
