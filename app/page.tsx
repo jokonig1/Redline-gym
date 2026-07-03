@@ -4,7 +4,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 
 // ── Datos editables ───────────────────────────────────────────────────────────
-const WHATSAPP = '+56973672191'   // ← cambiá esto por el número real
+const WHATSAPP = '+56936254575'   
 const INSTAGRAM = 'redlinehf'    // ← sin @
 const DIRECCION = 'Av. Transversal Uno #845, Ciudad de los Valles, Pudahuel'
 
