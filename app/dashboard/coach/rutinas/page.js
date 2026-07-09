@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/client'
 import LoadingSpinner from '@/app/dashboard/_components/LoadingSpinner'
 import ExercisePicker from '@/app/dashboard/_components/ExercisePicker'
 import { resolverEjercicio } from '@/app/dashboard/_components/ejerciciosCatalogo'
+import EmptyIcon from '@/app/dashboard/_components/EmptyIcon'
 
 export default function CoachRutinas() {
   const [coachId, setCoachId]     = useState(null)
@@ -147,7 +148,7 @@ export default function CoachRutinas() {
 
       {rutinas.length === 0 ? (
         <div className="bg-surface border border-border rounded-2xl p-10 text-center">
-          <div className="text-4xl mb-3">📋</div>
+          <EmptyIcon tipo="lista" className="w-10 h-10 mb-3 text-zinc-500" />
           <div className="text-foreground font-bold mb-1">Sin rutinas todavía</div>
           <div className="text-zinc-600 text-sm mb-4">
             Creá plantillas de rutinas para usarlas cuando registres sesiones

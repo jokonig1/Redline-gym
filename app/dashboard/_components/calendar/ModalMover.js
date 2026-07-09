@@ -1,5 +1,6 @@
 'use client'
 import { nombreSlot } from './utils'
+import DateInput from '../DateInput'
 
 export default function ModalMover({
   slot, form, setForm,
@@ -32,8 +33,7 @@ export default function ModalMover({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="text-[11px] text-zinc-500 uppercase tracking-wider block mb-1.5">Nueva fecha</label>
-              <input
-                type="date"
+              <DateInput
                 value={form.fecha_nueva}
                 onChange={e => setForm(f => ({ ...f, fecha_nueva: e.target.value }))}
                 className="w-full bg-raised border border-border text-foreground rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-red-600 transition-colors"

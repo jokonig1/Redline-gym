@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/client'
 import ModalClase    from '@/app/dashboard/_components/ModalClase'
 import { nombreSlot } from '@/app/dashboard/_components/calendar/utils'
 import LoadingSpinner from '@/app/dashboard/_components/LoadingSpinner'
+import EmptyIcon from '@/app/dashboard/_components/EmptyIcon'
 
 const HORAS_LABEL = {
   '06:00': '6 AM', '07:00': '7 AM', '08:00': '8 AM', '09:00': '9 AM',
@@ -109,7 +110,7 @@ export default function CoachInicio() {
 
       {clases.length === 0 ? (
         <div className="bg-surface border border-border rounded-2xl p-10 text-center">
-          <div className="text-4xl mb-3">🏋️</div>
+          <EmptyIcon tipo="pesas" className="w-10 h-10 mb-3 text-zinc-500" />
           <div className="text-foreground font-bold mb-1">Sin clases hoy</div>
           <div className="text-zinc-600 text-sm">Disfruta tu día libre</div>
         </div>

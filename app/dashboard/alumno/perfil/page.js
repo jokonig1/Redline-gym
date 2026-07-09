@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import LoadingSpinner from '@/app/dashboard/_components/LoadingSpinner'
+import EmptyIcon from '@/app/dashboard/_components/EmptyIcon'
 
 function formatFecha(fechaStr) {
   if (!fechaStr) return '—'
@@ -58,7 +59,7 @@ export default function AlumnoPerfil() {
 
   if (!alumno) return (
     <div className="bg-surface border border-border rounded-xl p-8 text-center max-w-md">
-      <div className="text-3xl mb-3">⚠️</div>
+      <EmptyIcon tipo="advertencia" className="w-8 h-8 mb-3 text-zinc-500" />
       <div className="text-foreground font-bold mb-1">Perfil no encontrado</div>
       <div className="text-zinc-500 text-sm">
         Tu cuenta no tiene un perfil de alumno asociado.<br />

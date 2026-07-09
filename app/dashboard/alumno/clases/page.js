@@ -1,7 +1,8 @@
 'use client'
-import { useEffect, useState, Fragment } from 'react'
+import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import LoadingSpinner from '@/app/dashboard/_components/LoadingSpinner'
+import EmptyIcon from '@/app/dashboard/_components/EmptyIcon'
 import { DIAS, DIAS_LABEL, HORAS } from '@/lib/constants'
 import { getSemana } from '@/lib/getSemana'
 
@@ -67,7 +68,7 @@ export default function MisClases() {
 
   if (!alumno) return (
     <div className="bg-surface border border-border rounded-xl p-8 text-center max-w-md">
-      <div className="text-3xl mb-3">⚠️</div>
+      <EmptyIcon tipo="advertencia" className="w-8 h-8 mb-3 text-zinc-500" />
       <div className="text-foreground font-bold mb-1">Perfil no encontrado</div>
       <div className="text-zinc-500 text-sm">Contactá al administrador del gimnasio.</div>
     </div>
@@ -77,7 +78,7 @@ export default function MisClases() {
     <div className="w-full">
       <h1 className="text-2xl font-black text-foreground mb-6">Mis clases</h1>
       <div className="bg-surface border border-border rounded-2xl p-12 text-center">
-        <div className="text-4xl mb-3">📅</div>
+        <EmptyIcon tipo="calendario" className="w-10 h-10 mb-3 text-zinc-500" />
         <div className="text-foreground font-bold mb-1">Sin clases asignadas</div>
         <div className="text-zinc-500 text-sm">
           Tu coach todavía no asignó tus horarios. Consultale directamente.
@@ -148,7 +149,7 @@ export default function MisClases() {
     <div className="w-full">
 
       {/* Header */}
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
         <div>
           <h1 className="text-2xl font-black text-foreground">Mis clases</h1>
           <p className="text-xs text-zinc-500 mt-1">
@@ -156,7 +157,7 @@ export default function MisClases() {
           </p>
         </div>
         {/* Referencia de colores */}
-        <div className="hidden sm:flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
           {Object.values(ESTADO_STYLE).map(st => (
             <div key={st.label} className="flex items-center gap-1.5">
               <span className={`w-2 h-2 rounded-full ${st.dot}`} />
@@ -204,64 +205,65 @@ export default function MisClases() {
         <div className="text-sm font-semibold text-foreground capitalize">{periodLabel}</div>
       </div>
 
-      {/* ── VISTA SEMANAL — grilla hora × día, igual que el calendario del coach ── */}
+      {/* ── VISTA SEMANAL — un día por fila, de arriba hacia abajo, ancho completo ── */}
       {vista === 'semanal' && (
-        <div className="bg-surface border border-border rounded-xl overflow-hidden">
-          <div className="grid gap-px bg-border" style={{ gridTemplateColumns: '28px repeat(6, minmax(0, 1fr))' }}>
-            <div className="bg-surface" />
-            {semana.map(({ dia, fecha }) => {
-              const esHoy = fecha.toDateString() === hoy.toDateString()
-              return (
-                <div key={dia} className={`bg-surface py-1 text-center ${esHoy ? 'bg-red-600/5' : ''}`}>
-                  <div className="text-[8px] font-bold text-zinc-500 uppercase tracking-wide">
-                    <span className="sm:hidden">{DIAS_2[dia]}</span>
-                    <span className="hidden sm:inline">{DIAS_LABEL[dia]}</span>
-                  </div>
-                  <div className={`text-[10px] sm:text-xs font-black ${esHoy ? 'text-red-500' : 'text-foreground'}`}>
+        <div className="space-y-2">
+          {semana.map(({ dia, fecha }) => {
+            const esHoy    = fecha.toDateString() === hoy.toDateString()
+            const fechaStr = toDateStr(fecha)
+            const slots    = getSlotsParaDia(dia, fechaStr)
+
+            return (
+              <div key={dia}
+                className={`bg-surface border rounded-xl overflow-hidden transition-colors ${
+                  esHoy ? 'border-red-600/50' : 'border-border'
+                }`}>
+                {/* Cabecera del día */}
+                <div className={`flex items-center gap-3 px-4 py-2.5 ${esHoy ? 'bg-red-600/5' : 'bg-raised'}`}>
+                  <div className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-black shrink-0 ${
+                    esHoy ? 'bg-red-600 text-white' : 'bg-hover text-foreground'
+                  }`}>
                     {fecha.getDate()}
                   </div>
+                  <div className="flex-1">
+                    <div className={`text-sm font-bold ${esHoy ? 'text-red-500' : 'text-foreground'}`}>
+                      {DIAS_LABEL[dia]}
+                      {esHoy && <span className="ml-2 text-[10px] font-normal text-red-400">Hoy</span>}
+                    </div>
+                  </div>
                 </div>
-              )
-            })}
-          </div>
 
-          <div className="grid gap-px bg-border" style={{ gridTemplateColumns: '28px repeat(6, minmax(0, 1fr))' }}>
-            {HORAS.map(hora => (
-              <Fragment key={hora}>
-                <div className="bg-surface flex items-start justify-end pr-0.5 pt-0.5">
-                  <span className="text-[7px] sm:text-[8px] text-zinc-500 font-mono leading-none">
-                    <span className="sm:hidden">{parseInt(hora)}</span>
-                    <span className="hidden sm:inline">{hora}</span>
-                  </span>
-                </div>
-                {semana.map(({ dia, fecha }) => {
-                  const fechaStr = toDateStr(fecha)
-                  const slots = getSlotsParaDia(dia, fechaStr).filter(s => s.hora?.slice(0,5) === hora)
+                {/* Clases del día */}
+                {slots.length === 0 && (
+                  <div className="px-4 py-3.5 border-t border-border">
+                    <span className="text-xs font-bold text-zinc-500 uppercase tracking-wider">Sin clases</span>
+                  </div>
+                )}
+                {slots.map(slot => {
+                  const estado = getEstado(slot.id, fechaStr)
+                  const st = ESTADO_STYLE[estado]
                   return (
-                    <div key={`${dia}-${hora}`} className="bg-surface p-px min-h-9 sm:min-h-12 min-w-0 overflow-hidden">
-                      {slots.map((slot, i) => {
-                        const estado = getEstado(slot.id, fechaStr)
-                        const st = ESTADO_STYLE[estado]
-                        return (
-                          <div key={i}
-                            className="rounded p-0.5 mb-0.5 select-none"
-                            style={{ background: st.bg, borderLeft: `2px solid ${st.border}` }}
-                          >
-                            <div className="text-[8px] sm:text-[9px] font-bold leading-tight truncate" style={{ color: st.border }}>
-                              {getLabel(estado, slot.id, fechaStr)}
-                            </div>
-                            <div className="hidden sm:block text-[7px] leading-tight mt-0.5 truncate" style={{ color: st.border + 'cc' }}>
-                              {slot.tipo === 'semipersonalizado' ? 'Semi' : 'Personal'}
-                            </div>
-                          </div>
-                        )
-                      })}
+                    <div key={slot.id}
+                      className="flex items-center gap-3 px-4 py-3 border-t border-border"
+                      style={{ background: st.bg }}
+                    >
+                      <div className="text-sm font-black w-14 shrink-0" style={{ color: st.border }}>
+                        {slot.hora?.slice(0, 5)}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-bold truncate" style={{ color: st.border }}>
+                          {getLabel(estado, slot.id, fechaStr)}
+                        </div>
+                        <div className="text-[11px] text-zinc-500 truncate">
+                          {slot.tipo === 'semipersonalizado' ? 'Semi Personalizado' : 'Personalizado'}
+                        </div>
+                      </div>
                     </div>
                   )
                 })}
-              </Fragment>
-            ))}
-          </div>
+              </div>
+            )
+          })}
         </div>
       )}
 

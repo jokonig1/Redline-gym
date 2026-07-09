@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { DIAS, DIAS_LABEL_LARGO, DIAS_POR_PLAN } from '@/lib/constants'
+import DateInput from '@/app/dashboard/_components/DateInput'
 
 function horariosParaPlan(plan) {
   return (DIAS_POR_PLAN[plan] || ['lunes']).map(dia => ({
@@ -16,10 +17,17 @@ function Field({ label, name, type = 'text', required = false, value, onChange }
       <label className="text-xs text-zinc-500 uppercase tracking-wider block mb-1.5">
         {label} {required && <span className="text-red-500">*</span>}
       </label>
-      <input
-        type={type} name={name} value={value} onChange={onChange} required={required}
-        className="w-full bg-raised border border-border text-foreground rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-red-600 transition-colors"
-      />
+      {type === 'date' ? (
+        <DateInput
+          value={value} onChange={onChange} required={required}
+          className="w-full bg-raised border border-border text-foreground rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-red-600 transition-colors"
+        />
+      ) : (
+        <input
+          type={type} name={name} value={value} onChange={onChange} required={required}
+          className="w-full bg-raised border border-border text-foreground rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-red-600 transition-colors"
+        />
+      )}
     </div>
   )
 }

@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { DIAS, DIAS_LABEL_LARGO, HORAS } from '@/lib/constants'
 import LoadingSpinner from '@/app/dashboard/_components/LoadingSpinner'
 import StatusBadge from '@/app/dashboard/_components/StatusBadge'
+import DateInput from '@/app/dashboard/_components/DateInput'
 
 // ── Helpers de fecha ──────────────────────────────────────────────────────────
 
@@ -200,12 +201,20 @@ function Field({ label, field, type = 'text', editando, form, alumno, onChange }
     <div>
       <label className="text-[10px] text-zinc-500 uppercase tracking-widest block mb-1">{label}</label>
       {editando ? (
-        <input
-          type={type}
-          value={form[field] || ''}
-          onChange={e => onChange(field, e.target.value)}
-          className="w-full bg-raised border border-border text-foreground rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-600"
-        />
+        type === 'date' ? (
+          <DateInput
+            value={form[field] || ''}
+            onChange={e => onChange(field, e.target.value)}
+            className="w-full bg-raised border border-border text-foreground rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-600"
+          />
+        ) : (
+          <input
+            type={type}
+            value={form[field] || ''}
+            onChange={e => onChange(field, e.target.value)}
+            className="w-full bg-raised border border-border text-foreground rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-600"
+          />
+        )
       ) : (
         <div className="text-sm text-foreground">{alumno[field] || <span className="text-zinc-500">—</span>}</div>
       )}

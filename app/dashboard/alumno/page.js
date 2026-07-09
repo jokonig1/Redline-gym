@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import LoadingSpinner from '@/app/dashboard/_components/LoadingSpinner'
 import RutinaLogger from '@/app/dashboard/_components/RutinaLogger'
+import EmptyIcon from '@/app/dashboard/_components/EmptyIcon'
 
 const DIAS_ORDER = ['lunes','martes','miercoles','jueves','viernes','sabado']
 
@@ -62,7 +63,7 @@ export default function AlumnoInicio() {
 
   if (!alumno) return (
     <div className="bg-surface border border-border rounded-xl p-8 text-center max-w-md">
-      <div className="text-3xl mb-3">⚠️</div>
+      <EmptyIcon tipo="advertencia" className="w-8 h-8 mb-3 text-zinc-500" />
       <div className="text-foreground font-bold mb-1">Perfil no encontrado</div>
       <div className="text-zinc-500 text-sm">Contactá al administrador del gimnasio.</div>
     </div>
@@ -176,7 +177,7 @@ export default function AlumnoInicio() {
 
         {clasesHoy.length === 0 ? (
           <div className="bg-surface border border-border rounded-2xl p-10 text-center">
-            <div className="text-3xl mb-2">📅</div>
+            <EmptyIcon tipo="calendario" className="w-9 h-9 mb-2 text-zinc-500" />
             <div className="text-foreground font-bold mb-1">No tenés clases hoy</div>
             <div className="text-zinc-500 text-sm">Descansá o consultá tu horario en "Mis Clases"</div>
           </div>

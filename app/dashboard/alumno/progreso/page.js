@@ -2,6 +2,8 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import LoadingSpinner from '@/app/dashboard/_components/LoadingSpinner'
+import DateInput from '@/app/dashboard/_components/DateInput'
+import EmptyIcon from '@/app/dashboard/_components/EmptyIcon'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -119,7 +121,7 @@ function HistorialRutinas({ sesiones }) {
 
   if (!sesiones.length) return (
     <div className="bg-surface border border-border rounded-xl p-8 text-center">
-      <div className="text-3xl mb-2">🏋️</div>
+      <EmptyIcon tipo="pesas" className="w-8 h-8 mb-2 text-zinc-500" />
       <div className="text-foreground font-bold text-sm mb-1">Sin sesiones todavía</div>
       <div className="text-zinc-600 text-xs">Tus rutinas aparecerán aquí después de entrenar</div>
     </div>
@@ -319,11 +321,11 @@ function SeccionPeso({ alumnoId }) {
               placeholder="kg"
               className="w-24 bg-raised border border-border text-foreground rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-600 transition-colors"
             />
-            <input
-              type="date"
+            <DateInput
               value={fecha}
               onChange={e => setFecha(e.target.value)}
-              className="flex-1 bg-raised border border-border text-foreground rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-600 transition-colors"
+              wrapperClassName="relative flex-1"
+              className="w-full bg-raised border border-border text-foreground rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-600 transition-colors"
             />
           </div>
         </div>
@@ -387,7 +389,7 @@ export default function AlumnoProgreso() {
 
   if (!alumno) return (
     <div className="bg-surface border border-border rounded-xl p-8 text-center max-w-md">
-      <div className="text-3xl mb-3">⚠️</div>
+      <EmptyIcon tipo="advertencia" className="w-8 h-8 mb-3 text-zinc-500" />
       <div className="text-foreground font-bold mb-1">Perfil no encontrado</div>
       <div className="text-zinc-500 text-sm">Contactá al administrador del gimnasio.</div>
     </div>

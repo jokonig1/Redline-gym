@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { DIAS_POR_PLAN } from '@/lib/constants'
 import LoadingSpinner from '@/app/dashboard/_components/LoadingSpinner'
 import StatusBadge from '@/app/dashboard/_components/StatusBadge'
+import DateInput from '@/app/dashboard/_components/DateInput'
 
 export default function AlumnosList({
   coachIdFiltro = null,
@@ -545,12 +546,20 @@ export default function AlumnosList({
                   ].map(({ label, field, type = 'text' }) => (
                     <div key={field}>
                       <label className="text-[10px] text-zinc-600 uppercase tracking-wider block mb-1">{label}</label>
-                      <input
-                        type={type}
-                        value={formEditar[field] || ''}
-                        onChange={e => setFormEditar(f => ({ ...f, [field]: e.target.value }))}
-                        className="w-full bg-raised border border-border text-foreground rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-600 transition-colors"
-                      />
+                      {type === 'date' ? (
+                        <DateInput
+                          value={formEditar[field] || ''}
+                          onChange={e => setFormEditar(f => ({ ...f, [field]: e.target.value }))}
+                          className="w-full bg-raised border border-border text-foreground rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-600 transition-colors"
+                        />
+                      ) : (
+                        <input
+                          type={type}
+                          value={formEditar[field] || ''}
+                          onChange={e => setFormEditar(f => ({ ...f, [field]: e.target.value }))}
+                          className="w-full bg-raised border border-border text-foreground rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-600 transition-colors"
+                        />
+                      )}
                     </div>
                   ))}
                 </div>

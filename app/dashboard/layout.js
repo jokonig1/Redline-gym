@@ -61,7 +61,7 @@ export default function DashboardLayout({ children }) {
       { label: 'Coaches',   icon: '◈', href: '/dashboard/admin/coaches' },
       { label: 'Horarios',  icon: '▦', href: '/dashboard/admin/horarios' },
       { label: 'Rutinas',   icon: '◈', href: '/dashboard/admin/rutinas' },
-      { label: 'Métricas',  icon: '▦', href: '/dashboard/admin/kpis' },
+      { label: 'Métricas',  icon: '↗', href: '/dashboard/admin/kpis' },
       { label: 'Mi perfil', icon: '●', href: '/dashboard/admin/perfil' },
     ],
     coach: [

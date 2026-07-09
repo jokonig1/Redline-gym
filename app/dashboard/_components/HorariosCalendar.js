@@ -7,6 +7,7 @@ import { toDateStr, resolveColor, nombreSlot } from './calendar/utils'
 import TarjetaSemanal from './calendar/TarjetaSemanal'
 import TarjetaDiaria  from './calendar/TarjetaDiaria'
 import ModalMover     from './calendar/ModalMover'
+import DateInput      from './DateInput'
 
 const DIAS_2 = { lunes:'Lu', martes:'Ma', miercoles:'Mi', jueves:'Ju', viernes:'Vi', sabado:'Sá' }
 
@@ -882,7 +883,7 @@ function HorarioForm({ formExtra, setFormExtra }) {
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className="text-[10px] text-zinc-500 uppercase tracking-wider block mb-1.5">Fecha</label>
-          <input type="date" value={formExtra.fecha} min={toDateStr(new Date())}
+          <DateInput value={formExtra.fecha} min={toDateStr(new Date())}
             onChange={e => setFormExtra(f => ({ ...f, fecha: e.target.value }))}
             className="w-full bg-raised border border-border text-foreground rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-red-600" />
         </div>
