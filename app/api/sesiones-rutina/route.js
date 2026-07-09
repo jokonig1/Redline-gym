@@ -35,7 +35,7 @@ export async function GET(req) {
 }
 
 export async function POST(req) {
-  const { response } = await requireAuth(['admin', 'coach'])
+  const { response } = await requireAuth(['admin', 'coach', 'alumno'])
   if (response) return response
 
   const { data: body, error: validationError } = parseBody(sesionRutinaSchema, await req.json())

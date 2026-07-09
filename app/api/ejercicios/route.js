@@ -13,7 +13,7 @@ function normalizarEjercicio(s) {
  * GET /api/ejercicios — catálogo completo, compartido entre todos los coaches.
  */
 export async function GET() {
-  const { response } = await requireAuth(['admin', 'coach'])
+  const { response } = await requireAuth(['admin', 'coach', 'alumno'])
   if (response) return response
 
   const { data } = await supabaseAdmin
@@ -31,7 +31,7 @@ export async function GET() {
  * crea uno nuevo con el nombre tal como se escribió.
  */
 export async function POST(req) {
-  const { response } = await requireAuth(['admin', 'coach'])
+  const { response } = await requireAuth(['admin', 'coach', 'alumno'])
   if (response) return response
 
   const { data: body, error: validationError } = parseBody(ejercicioCatalogoSchema, await req.json())

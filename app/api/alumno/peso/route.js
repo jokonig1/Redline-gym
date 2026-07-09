@@ -20,7 +20,7 @@ export async function GET(req) {
 }
 
 export async function POST(req) {
-  const { response } = await requireAuth(['admin', 'coach'])
+  const { response } = await requireAuth(['admin', 'coach', 'alumno'])
   if (response) return response
 
   const { data: body, error: validationError } = parseBody(pesoSchema, await req.json())
@@ -45,7 +45,7 @@ export async function POST(req) {
 }
 
 export async function DELETE(req) {
-  const { response } = await requireAuth(['admin', 'coach'])
+  const { response } = await requireAuth(['admin', 'coach', 'alumno'])
   if (response) return response
 
   const { searchParams } = new URL(req.url)

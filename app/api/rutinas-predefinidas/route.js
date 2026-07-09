@@ -3,7 +3,7 @@ import { supabaseAdmin } from '@/lib/supabase/admin'
 import { crearRutinaSchema, parseBody } from '@/lib/schemas'
 
 export async function GET(req) {
-  const { response } = await requireAuth(['admin', 'coach'])
+  const { response } = await requireAuth(['admin', 'coach', 'alumno'])
   if (response) return response
 
   const { searchParams } = new URL(req.url)
@@ -22,7 +22,7 @@ export async function GET(req) {
 }
 
 export async function POST(req) {
-  const { response } = await requireAuth(['admin', 'coach'])
+  const { response } = await requireAuth(['admin', 'coach', 'alumno'])
   if (response) return response
 
   const { data: body, error: validationError } = parseBody(crearRutinaSchema, await req.json())
