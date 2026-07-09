@@ -24,6 +24,7 @@ export default function MisClases() {
   const [horarios,    setHorarios]    = useState([])
   const [excepciones, setExcepciones] = useState([])
   const [asistencias, setAsistencias] = useState([])
+  const [sesiones,    setSesiones]    = useState([])
   const [loading,     setLoading]     = useState(true)
 
   const [vista,           setVista]           = useState('semanal')
@@ -44,9 +45,10 @@ export default function MisClases() {
       if (!alumnoData?.id) { setLoading(false); return }
       setAlumno(alumnoData)
 
-      const [horariosRes, asistRes] = await Promise.all([
+      const [horariosRes, asistRes, sesionesRes] = await Promise.all([
         fetch(`/api/alumno/horarios?alumno_id=${alumnoData.id}`),
         fetch(`/api/asistencias?alumno_id=${alumnoData.id}`),
+        fetch(`/api/sesiones-rutina?alumno_id=${alumnoData.id}`),
       ])
       const { horarios: hrs, excepciones: excs } = horariosRes.ok
         ? await horariosRes.json()
@@ -55,6 +57,7 @@ export default function MisClases() {
       setHorarios(hrs)
       setExcepciones(excs)
       setAsistencias(asistRes.ok ? await asistRes.json() : [])
+      setSesiones(sesionesRes.ok ? await sesionesRes.json() : [])
       setLoading(false)
     }
     init()
@@ -91,6 +94,15 @@ export default function MisClases() {
     const a = asistencias.find(x => x.alumno_horario_id === alumnoHorarioId && x.fecha === fechaStr)
     if (!a) return 'pendiente'
     return a.asistio ? 'asistio' : 'falta'
+  }
+
+  // Si asistió y hay una rutina cargada ese día, mostrar su nombre en vez de "Asistió".
+  function getLabel(estado, alumnoHorarioId, fechaStr) {
+    if (estado === 'asistio') {
+      const sesion = sesiones.find(s => s.alumno_horario_id === alumnoHorarioId && s.fecha === fechaStr)
+      if (sesion) return sesion.rutina_nombre
+    }
+    return ESTADO_STYLE[estado].label
   }
 
   // Construir slots para un día (con excepciones aplicadas)
@@ -228,14 +240,15 @@ export default function MisClases() {
                   return (
                     <div key={`${dia}-${hora}`} className="bg-surface p-px min-h-9 sm:min-h-12 min-w-0 overflow-hidden">
                       {slots.map((slot, i) => {
-                        const st = ESTADO_STYLE[getEstado(slot.id, fechaStr)]
+                        const estado = getEstado(slot.id, fechaStr)
+                        const st = ESTADO_STYLE[estado]
                         return (
                           <div key={i}
                             className="rounded p-0.5 mb-0.5 select-none"
                             style={{ background: st.bg, borderLeft: `2px solid ${st.border}` }}
                           >
                             <div className="text-[8px] sm:text-[9px] font-bold leading-tight truncate" style={{ color: st.border }}>
-                              {st.label}
+                              {getLabel(estado, slot.id, fechaStr)}
                             </div>
                             <div className="hidden sm:block text-[7px] leading-tight mt-0.5 truncate" style={{ color: st.border + 'cc' }}>
                               {slot.tipo === 'semipersonalizado' ? 'Semi' : 'Personal'}
@@ -294,7 +307,8 @@ export default function MisClases() {
                   </div>
                   <div className="flex flex-col gap-1.5 px-3 pb-2.5">
                     {slots.map((slot, i) => {
-                      const st = ESTADO_STYLE[getEstado(slot.id, fechaStr)]
+                      const estado = getEstado(slot.id, fechaStr)
+                      const st = ESTADO_STYLE[estado]
                       return (
                         <div key={i}
                           className="flex items-center gap-2.5 rounded-xl px-3 py-2.5"
@@ -302,7 +316,7 @@ export default function MisClases() {
                         >
                           <div className="flex-1 min-w-0">
                             <div className="text-sm font-bold truncate" style={{ color: st.border }}>
-                              {st.label}
+                              {getLabel(estado, slot.id, fechaStr)}
                             </div>
                             <div className="text-[11px] truncate" style={{ color: st.border + 'bb' }}>
                               {slot.tipo === 'semipersonalizado' ? 'Semi Personalizado' : 'Personalizado'}
@@ -364,13 +378,14 @@ export default function MisClases() {
                     }`}>{d}</div>
                     <div className="space-y-px flex-1 min-h-0 overflow-hidden">
                       {slots.map((slot, i) => {
-                        const st = ESTADO_STYLE[getEstado(slot.id, fechaStr)]
+                        const estado = getEstado(slot.id, fechaStr)
+                        const st = ESTADO_STYLE[estado]
                         return (
                           <div key={i}
                             className="text-[7px] px-0.5 py-px rounded truncate leading-tight"
                             style={{ background: st.bg, color: st.border }}
                           >
-                            {st.label}
+                            {getLabel(estado, slot.id, fechaStr)}
                           </div>
                         )
                       })}
