@@ -121,6 +121,8 @@ function HistorialRutinas({ sesiones }) {
     if (!sesiones.length) return {}
     return { [sesiones[0].fecha.substring(0, 7)]: true }
   })
+  // Semanas desplegadas en mobile (en desktop siempre se ven, esto no aplica ahí)
+  const [semanasAbiertas, setSemanasAbiertas] = useState({})
 
   if (!sesiones.length) return (
     <div className="bg-surface border border-border rounded-xl p-8 text-center">
@@ -169,27 +171,43 @@ function HistorialRutinas({ sesiones }) {
             {isOpen && (
               <div className="border-t border-border">
                 <div className="flex flex-col md:flex-row divide-y md:divide-y-0 md:divide-x divide-border">
-                  {semanas.map(w => (
-                    <div key={w} className="flex-1 flex flex-col">
-                      <div className="px-3 py-2 bg-raised border-b border-border">
-                        <div className="text-[11px] font-bold text-foreground uppercase tracking-wider">Semana {w}</div>
-                        <div className="text-[10px] text-zinc-500">{porSemana[w].map(s => formatFechaCorta(s.fecha)).join(' · ')}</div>
-                      </div>
-                      <div className="p-3 space-y-4">
+                  {semanas.map(w => {
+                    const abiertaDefault = w === semanas[semanas.length - 1]
+                    const semanaAbierta = semanasAbiertas[`${mes}-${w}`] ?? abiertaDefault
+                    return (
+                    <div key={w} className="flex flex-col md:flex-1 md:min-w-0">
+                      <button
+                        onClick={() => setSemanasAbiertas(prev => ({ ...prev, [`${mes}-${w}`]: !semanaAbierta }))}
+                        className="w-full flex items-center justify-between px-2 py-2 bg-raised border-b border-border text-left md:cursor-default"
+                      >
+                        <div className="min-w-0">
+                          <div className="text-[10px] font-bold text-foreground uppercase tracking-wider truncate">Semana {w}</div>
+                          <div className="text-[9px] text-zinc-500 truncate">{porSemana[w].map(s => formatFechaCorta(s.fecha)).join(' · ')}</div>
+                        </div>
+                        <span className="md:hidden text-zinc-500 text-[10px] shrink-0 ml-1">{semanaAbierta ? '▲' : '▼'}</span>
+                      </button>
+                      <div className={`${semanaAbierta ? 'block' : 'hidden'} md:block p-2 space-y-3`}>
                         {porSemana[w].map((sesion, idx) => (
                           <div key={sesion.id}>
-                            {idx > 0 && <div className="border-t border-border mb-4" />}
-                            <div className="flex items-center justify-between mb-2">
-                              <span className="text-[11px] font-bold text-red-500 uppercase tracking-wider">{sesion.rutina_nombre}</span>
+                            {idx > 0 && <div className="border-t border-border mb-3" />}
+                            <div className="mb-2">
+                              <div className="text-[10px] font-bold text-red-500 uppercase tracking-wider leading-tight">
+                                <span className="md:hidden">{sesion.rutina_nombre}</span>
+                                <span className="hidden md:block">
+                                  {sesion.rutina_nombre.split('/').map((parte, i) => (
+                                    <div key={i}>{parte.trim()}</div>
+                                  ))}
+                                </span>
+                              </div>
                               <span className="text-[9px] text-zinc-500">{formatFechaCorta(sesion.fecha)}</span>
                             </div>
                             <div className="space-y-2">
                               {(sesion.ejercicios || []).map((ej, i) => (
                                 <div key={i}>
-                                  <div className="text-[10px] text-zinc-500 mb-1">{ej.nombre}</div>
-                                  <div className="flex flex-wrap gap-1">
+                                  <div className="text-[9px] text-zinc-500 mb-1 truncate" title={ej.nombre}>{ej.nombre}</div>
+                                  <div className="flex flex-wrap md:flex-col gap-1 items-start">
                                     {(ej.series || []).map((s, j) => (
-                                      <span key={j} className="text-[10px] font-bold text-foreground bg-hover-md border border-border px-1.5 py-0.5 rounded">
+                                      <span key={j} className="text-[9px] font-bold text-foreground bg-hover-md border border-border px-1.5 py-0.5 rounded">
                                         {s.peso ? `${s.peso}kg` : '—'}<span className="text-zinc-500 font-normal">×</span>{s.reps || '—'}
                                       </span>
                                     ))}
@@ -201,7 +219,8 @@ function HistorialRutinas({ sesiones }) {
                         ))}
                       </div>
                     </div>
-                  ))}
+                    )
+                  })}
                 </div>
               </div>
             )}
@@ -388,7 +407,7 @@ export default function AlumnoProgreso() {
   const diasRestantesVal = diasRestantes(alumno.vencimiento_plan)
 
   return (
-    <div className="max-w-2xl space-y-5">
+    <div className="max-w-5xl space-y-5">
 
       {/* Header */}
       <div>

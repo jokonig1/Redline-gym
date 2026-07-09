@@ -39,6 +39,8 @@ function HistorialRutinas({ sesiones }) {
     if (!sesiones.length) return {}
     return { [sesiones[0].fecha.substring(0, 7)]: true }
   })
+  // Semanas desplegadas en mobile (en desktop siempre se ven, esto no aplica ahí)
+  const [semanasAbiertas, setSemanasAbiertas] = useState({})
 
   function toggle(mes) {
     setAbiertos(prev => ({ ...prev, [mes]: !prev[mes] }))
@@ -93,52 +95,69 @@ function HistorialRutinas({ sesiones }) {
               <span className="text-zinc-500 text-xs">{isOpen ? '▲' : '▼'}</span>
             </button>
 
-            {/* Cuerpo: columnas por semana en md+, filas en móvil */}
+            {/* Cuerpo: columnas por semana (con scroll horizontal si no entran todas) */}
             {isOpen && (
               <div className="border-t border-border">
                 <div className="flex flex-col md:flex-row divide-y md:divide-y-0 md:divide-x divide-border">
-                  {semanas.map(w => (
-                    <div key={w} className="flex-1 flex flex-col">
+                  {semanas.map(w => {
+                    const abiertaDefault = w === semanas[semanas.length - 1]
+                    const semanaAbierta = semanasAbiertas[`${mes}-${w}`] ?? abiertaDefault
+                    return (
+                    <div key={w} className="flex flex-col md:flex-1 md:min-w-0">
 
-                      {/* Cabecera de semana */}
-                      <div className="px-3 py-2.5 bg-raised border-b border-border shrink-0">
-                        <div className="text-[11px] font-bold text-foreground uppercase tracking-wider">
-                          Semana {w}
+                      {/* Cabecera de semana: desplegable en mobile, siempre visible el contenido en desktop */}
+                      <button
+                        onClick={() => setSemanasAbiertas(prev => ({ ...prev, [`${mes}-${w}`]: !semanaAbierta }))}
+                        className="w-full flex items-center justify-between px-2 py-2.5 bg-raised border-b border-border shrink-0 text-left md:cursor-default"
+                      >
+                        <div className="min-w-0">
+                          <div className="text-[10px] font-bold text-foreground uppercase tracking-wider truncate">
+                            Semana {w}
+                          </div>
+                          <div className="text-[9px] text-zinc-500 mt-0.5 truncate">
+                            {porSemana[w].map(s => formatFechaCorta(s.fecha)).join(' · ')}
+                          </div>
                         </div>
-                        <div className="text-[10px] text-zinc-500 mt-0.5">
-                          {porSemana[w].map(s => formatFechaCorta(s.fecha)).join(' · ')}
-                        </div>
-                      </div>
+                        <span className="md:hidden text-zinc-500 text-[10px] shrink-0 ml-1">
+                          {semanaAbierta ? '▲' : '▼'}
+                        </span>
+                      </button>
 
                       {/* Sesiones de la semana */}
-                      <div className="p-3 space-y-4">
+                      <div className={`${semanaAbierta ? 'block' : 'hidden'} md:block p-2 space-y-3`}>
                         {porSemana[w].map((sesion, idx) => (
                           <div key={sesion.id}>
                             {/* Si hay más de 1 sesión en la semana, separar con línea */}
-                            {idx > 0 && <div className="border-t border-border mb-4" />}
+                            {idx > 0 && <div className="border-t border-border mb-3" />}
 
-                            {/* Nombre de rutina + fecha */}
-                            <div className="flex items-center justify-between mb-2">
-                              <span className="text-[11px] font-bold text-red-500 uppercase tracking-wider leading-tight">
-                                {sesion.rutina_nombre}
-                              </span>
-                              <span className="text-[9px] text-zinc-500 shrink-0 ml-1">
+                            {/* Nombre de rutina (partido en líneas por "/" solo en desktop) + fecha */}
+                            <div className="mb-2">
+                              <div className="text-[10px] font-bold text-red-500 uppercase tracking-wider leading-tight">
+                                <span className="md:hidden">{sesion.rutina_nombre}</span>
+                                <span className="hidden md:block">
+                                  {sesion.rutina_nombre.split('/').map((parte, i) => (
+                                    <div key={i}>{parte.trim()}</div>
+                                  ))}
+                                </span>
+                              </div>
+                              <span className="text-[9px] text-zinc-500">
                                 {formatFechaCorta(sesion.fecha)}
                               </span>
                             </div>
 
-                            {/* Ejercicios */}
-                            <div className="space-y-2.5">
+                            {/* Ejercicios: en fila en mobile (hay ancho de sobra), apiladas hacia
+                                abajo en desktop (donde compiten por ancho 5 columnas angostas) */}
+                            <div className="space-y-2">
                               {(sesion.ejercicios || []).map((ej, i) => (
                                 <div key={i}>
-                                  <div className="text-[10px] text-zinc-500 mb-1 truncate" title={ej.nombre}>
+                                  <div className="text-[9px] text-zinc-500 mb-1 truncate" title={ej.nombre}>
                                     {ej.nombre}
                                   </div>
-                                  <div className="flex flex-wrap gap-1">
+                                  <div className="flex flex-wrap md:flex-col gap-1 items-start">
                                     {(ej.series || []).map((serie, j) => (
                                       <span
                                         key={j}
-                                        className="text-[10px] font-bold text-foreground bg-hover-md border border-border px-1.5 py-0.5 rounded"
+                                        className="text-[9px] font-bold text-foreground bg-hover-md border border-border px-1.5 py-0.5 rounded"
                                       >
                                         {serie.peso ? `${serie.peso}kg` : '—'}
                                         <span className="text-zinc-500 font-normal">×</span>
@@ -146,7 +165,7 @@ function HistorialRutinas({ sesiones }) {
                                       </span>
                                     ))}
                                     {(!ej.series || ej.series.length === 0) && (
-                                      <span className="text-[10px] text-zinc-600">—</span>
+                                      <span className="text-[9px] text-zinc-600">—</span>
                                     )}
                                   </div>
                                 </div>
@@ -162,7 +181,8 @@ function HistorialRutinas({ sesiones }) {
                         ))}
                       </div>
                     </div>
-                  ))}
+                    )
+                  })}
                 </div>
               </div>
             )}
