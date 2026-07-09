@@ -17,7 +17,8 @@ export async function GET(req) {
 
   const hoy     = new Date()
   const diaHoy  = DIAS[hoy.getDay()]
-  const fechaHoy = hoy.toISOString().split('T')[0]
+  // Fecha local (no toISOString/UTC): a la noche en Chile, UTC ya es "mañana".
+  const fechaHoy = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`
 
   // 1. Horarios fijos del coach para hoy
   const { data: horarios } = await supabaseAdmin
@@ -26,6 +27,7 @@ export async function GET(req) {
     .eq('coach_id', coachId)
     .eq('dia', diaHoy)
     .eq('activo', true)
+    .or(`fecha.is.null,fecha.eq.${fechaHoy}`)
     .order('hora')
 
   const horariosActivos = horarios || []

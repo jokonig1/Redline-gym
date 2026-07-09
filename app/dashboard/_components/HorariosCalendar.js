@@ -2,8 +2,8 @@
 import { useState, Fragment, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { DIAS, DIAS_LABEL, DIAS_LABEL_LARGO, HORAS, COLORES_COACH } from '@/lib/constants'
-import { toDateStr, resolveColor } from './calendar/utils'
+import { DIAS, DIAS_LABEL, HORAS, COLORES_COACH } from '@/lib/constants'
+import { toDateStr, resolveColor, nombreSlot } from './calendar/utils'
 import TarjetaSemanal from './calendar/TarjetaSemanal'
 import TarjetaDiaria  from './calendar/TarjetaDiaria'
 import ModalMover     from './calendar/ModalMover'
@@ -11,8 +11,22 @@ import ModalMover     from './calendar/ModalMover'
 const DIAS_2 = { lunes:'Lu', martes:'Ma', miercoles:'Mi', jueves:'Ju', viernes:'Vi', sabado:'Sá' }
 
 const FORM_EXTRA_INIT = {
-  alumno_id:'', busqueda:'', nombre:'', telefono:'', plan:'3x/sem', coach_id:'',
-  dia:'lunes', hora:'08:00', tipo:'semipersonalizado',
+  alumno_id:'', busqueda:'', nombre:'', telefono:'', coach_id:'',
+  fecha:'', hora:'08:00', tipo:'semipersonalizado',
+}
+
+// Quita tildes/diacríticos y pasa a minúsculas, para buscar sin importar acentos.
+function normalizar(s) {
+  return (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
+}
+
+// Deriva el día de semana ('lunes'...'sabado') a partir de una fecha "YYYY-MM-DD".
+// Devuelve null para domingo, ya que no hay clases ese día.
+function diaFromFecha(fechaStr) {
+  if (!fechaStr) return null
+  const d = new Date(fechaStr + 'T00:00:00')
+  const idx = (d.getDay() + 6) % 7
+  return idx < 6 ? DIAS[idx] : null
 }
 
 export default function HorariosCalendar({
@@ -49,6 +63,7 @@ export default function HorariosCalendar({
   const [tipoAlumno,     setTipoAlumno]     = useState(null)
   const [alumnos,        setAlumnos]        = useState([])
   const [loadingAlumnos, setLoadingAlumnos] = useState(false)
+  const [coachBusqueda,  setCoachBusqueda]  = useState('')
   const [formExtra,      setFormExtra]      = useState(FORM_EXTRA_INIT)
   const [guardandoExtra, setGuardandoExtra] = useState(false)
   const [errorExtra,     setErrorExtra]     = useState('')
@@ -95,6 +110,7 @@ export default function HorariosCalendar({
 
     const regulares = horariosFiltrados
       .filter(h => h.dia === dia && h.hora?.slice(0,5) === hora)
+      .filter(h => !h.fecha || h.fecha === fechaStr)
       .filter(h => {
         const exc = getExcepcion(h.id, fechaStr)
         return !exc || (!exc.cancelado && !exc.fecha_nueva && !exc.hora_nueva)
@@ -161,8 +177,8 @@ export default function HorariosCalendar({
   // ── Modal agregar extra ─────────────────────────────────────────────────────
 
   function abrirModalAgregar() {
-    setModalAgregar(true); setPaso(1); setTipoAlumno(null); setAlumnos([])
-    setFormExtra({ ...FORM_EXTRA_INIT, coach_id: soloEditarCoachId || '' })
+    setModalAgregar(true); setPaso(1); setTipoAlumno(null); setAlumnos([]); setCoachBusqueda('')
+    setFormExtra({ ...FORM_EXTRA_INIT, coach_id: soloEditarCoachId || '', fecha: toDateStr(new Date()) })
     setErrorExtra(''); setCapWarningExtra(false); setExitoExtra(false)
   }
 
@@ -174,9 +190,7 @@ export default function HorariosCalendar({
   async function fetchAlumnos() {
     setLoadingAlumnos(true)
     const supabase = createClient()
-    let q = supabase.from('alumnos').select('id,nombre,plan,coach_id').eq('activo',true).order('nombre')
-    if (soloEditarCoachId) q = q.eq('coach_id', soloEditarCoachId)
-    const { data } = await q
+    const { data } = await supabase.from('alumnos').select('id,nombre,plan,coach_id').eq('activo',true).order('nombre')
     setAlumnos(data || [])
     setLoadingAlumnos(false)
   }
@@ -190,37 +204,37 @@ export default function HorariosCalendar({
     setErrorExtra('')
     if (tipoAlumno === 'existente' && !formExtra.alumno_id) { setErrorExtra('Seleccioná un alumno.'); return }
     if (tipoAlumno === 'nuevo' && !formExtra.nombre.trim()) { setErrorExtra('El nombre es obligatorio.'); return }
+    const dia = diaFromFecha(formExtra.fecha)
+    if (!dia) { setErrorExtra('Elegí una fecha válida (no hay clases los domingos).'); return }
     if (!forzar) {
       const supabase = createClient()
-      const { data } = await supabase.from('alumno_horarios').select('hora').eq('activo',true).eq('dia',formExtra.dia)
+      const { data } = await supabase.from('alumno_horarios').select('hora').eq('activo',true).eq('dia',dia)
       const count = (data||[]).filter(r => (r.hora||'').startsWith(formExtra.hora)).length
       if (count >= 16) { setCapWarningExtra(count); return }
     }
+
     setCapWarningExtra(false); setGuardandoExtra(true)
     const supabase = createClient()
     try {
-      let alumnoId = formExtra.alumno_id
-      if (tipoAlumno === 'nuevo') {
-        const { data: n, error: e } = await supabase.from('alumnos')
-          .insert([{ nombre: formExtra.nombre.trim(), telefono: formExtra.telefono.trim() || null,
-            plan: formExtra.plan, coach_id: formExtra.coach_id || soloEditarCoachId || null, activo: true }])
-          .select('id').single()
-        if (e) throw new Error(e.message)
-        alumnoId = n.id
+      const base = {
+        coach_id: formExtra.coach_id || soloEditarCoachId || null,
+        dia, hora: formExtra.hora, tipo: formExtra.tipo, activo: true,
+        fecha: formExtra.fecha,
       }
-      const { error: errH } = await supabase.from('alumno_horarios').insert([{
-        alumno_id: alumnoId, coach_id: formExtra.coach_id || soloEditarCoachId || null,
-        dia: formExtra.dia, hora: formExtra.hora, tipo: formExtra.tipo, activo: true,
-      }])
+      const fila = tipoAlumno === 'nuevo'
+        ? { ...base, alumno_id: null, invitado_nombre: formExtra.nombre.trim(), invitado_telefono: formExtra.telefono.trim() || null }
+        : { ...base, alumno_id: formExtra.alumno_id }
+
+      const { error: errH } = await supabase.from('alumno_horarios').insert([fila])
       if (errH) throw new Error(errH.message)
       setExitoExtra(true)
     } catch (err) { setErrorExtra(err.message || 'Error al guardar.')
     } finally { setGuardandoExtra(false) }
   }
 
-  const alumnosFiltrados = formExtra.busqueda.trim()
-    ? alumnos.filter(a => a.nombre?.toLowerCase().includes(formExtra.busqueda.toLowerCase()))
-    : alumnos
+  const alumnosFiltrados = alumnos
+    .filter(a => !coachBusqueda || a.coach_id === coachBusqueda)
+    .filter(a => !formExtra.busqueda.trim() || normalizar(a.nombre).includes(normalizar(formExtra.busqueda)))
 
   const tarjetaProps = {
     coaches, soloEditarCoachId,
@@ -449,6 +463,7 @@ export default function HorariosCalendar({
                 const slots = esDomingo ? [] : [
                   ...horariosFiltrados.filter(h => {
                     if (h.dia !== diaNombre) return false
+                    if (h.fecha && h.fecha !== fechaStr) return false
                     const exc = getExcepcion(h.id, fechaStr)
                     return !exc || (!exc.cancelado && !exc.fecha_nueva)
                   }),
@@ -492,7 +507,7 @@ export default function HorariosCalendar({
                             className="text-[7px] px-0.5 py-px rounded truncate leading-tight cursor-pointer hover:brightness-125 active:scale-95"
                             style={{ background: color.bg, color: color.border }}
                           >
-                            {slot.alumno?.nombre?.split(' ')[0]}
+                            {nombreSlot(slot).split(' ')[0]}
                           </div>
                         )
                       })}
@@ -529,10 +544,10 @@ export default function HorariosCalendar({
             <div className="px-5 pt-5 pb-4 border-b border-border">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-red-900/30 flex items-center justify-center text-sm font-black text-red-400 shrink-0">
-                  {slotAccion.alumno?.nombre?.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                  {nombreSlot(slotAccion).split(' ').map(n => n[0]).join('').slice(0, 2)}
                 </div>
                 <div>
-                  <div className="text-sm font-bold text-foreground">{slotAccion.alumno?.nombre}</div>
+                  <div className="text-sm font-bold text-foreground">{nombreSlot(slotAccion)}</div>
                   <div className="text-xs text-zinc-500 mt-0.5">
                     {slotAccion.hora?.slice(0, 5)}
                     {' · '}
@@ -547,17 +562,19 @@ export default function HorariosCalendar({
 
             {/* Acciones */}
             <div className="p-3 space-y-1.5">
-              <button
-                onClick={irAPerfil}
-                className="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl hover:bg-hover-md transition-colors text-left"
-              >
-                <span className="text-lg">◉</span>
-                <div>
-                  <div className="text-sm font-semibold text-foreground">Ver perfil</div>
-                  <div className="text-[11px] text-zinc-500">Historial, datos y rutinas del alumno</div>
-                </div>
-                <span className="ml-auto text-zinc-400">›</span>
-              </button>
+              {slotAccion.alumno?.id && (
+                <button
+                  onClick={irAPerfil}
+                  className="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl hover:bg-hover-md transition-colors text-left"
+                >
+                  <span className="text-lg">◉</span>
+                  <div>
+                    <div className="text-sm font-semibold text-foreground">Ver perfil</div>
+                    <div className="text-[11px] text-zinc-500">Historial, datos y rutinas del alumno</div>
+                  </div>
+                  <span className="ml-auto text-zinc-400">›</span>
+                </button>
+              )}
 
               {(!soloEditarCoachId || slotAccion.coach_id === soloEditarCoachId) && (
                 <button
@@ -624,9 +641,7 @@ export default function HorariosCalendar({
                     <span className="text-green-500 text-2xl">✓</span>
                   </div>
                   <p className="text-foreground font-bold mb-1">¡Clase agregada!</p>
-                  <p className="text-sm text-zinc-500 mb-5">
-                    {tipoAlumno === 'nuevo' ? 'El alumno fue creado y su horario quedó registrado.' : 'El horario extra quedó registrado.'}
-                  </p>
+                  <p className="text-sm text-zinc-500 mb-5">El horario extra quedó registrado.</p>
                   <button onClick={cerrarModalAgregar}
                     className="bg-red-600 hover:bg-red-700 text-white text-sm font-bold px-6 py-2.5 rounded-xl transition-colors">
                     Cerrar y actualizar
@@ -637,7 +652,7 @@ export default function HorariosCalendar({
                   <p className="text-xs text-zinc-500 mb-4">Este horario se agrega como clase extra, sin modificar el calendario regular del alumno.</p>
                   {[
                     { tipo:'existente', icon:'◉', titulo:'Alumno existente', sub:'Agregar una clase extra a alguien ya registrado' },
-                    { tipo:'nuevo',     icon:'+',  titulo:'Alumno nuevo',     sub:'Registrar a alguien nuevo con datos básicos' },
+                    { tipo:'nuevo',     icon:'+',  titulo:'Invitado',         sub:'Sin ficha de alumno — solo esta clase' },
                   ].map(({ tipo, icon, titulo, sub }) => (
                     <button key={tipo} onClick={() => elegirTipo(tipo)}
                       className="w-full flex items-center gap-4 p-4 rounded-xl border border-border hover:border-red-600/50 hover:bg-red-600/5 transition-all text-left">
@@ -652,6 +667,16 @@ export default function HorariosCalendar({
                 </div>
               ) : tipoAlumno === 'existente' ? (
                 <div className="space-y-4">
+                  {coaches.length > 0 && (
+                    <div>
+                      <label className="text-[10px] text-zinc-500 uppercase tracking-wider block mb-1.5">Filtrar por coach</label>
+                      <select value={coachBusqueda} onChange={e => setCoachBusqueda(e.target.value)}
+                        className="w-full bg-raised border border-border text-foreground rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-red-600">
+                        <option value="">Todos los coaches</option>
+                        {coaches.map(c => <option key={c.id} value={c.id}>{c.nombre.split(' ')[0]}</option>)}
+                      </select>
+                    </div>
+                  )}
                   <div>
                     <label className="text-[10px] text-zinc-500 uppercase tracking-wider block mb-1.5">Alumno</label>
                     <input type="text" placeholder="Buscar por nombre..."
@@ -676,7 +701,11 @@ export default function HorariosCalendar({
                             </div>
                             <div className="min-w-0 flex-1">
                               <div className="truncate font-medium">{a.nombre}</div>
-                              <div className="text-[10px] text-zinc-500">{a.plan}</div>
+                              <div className="text-[10px] text-zinc-500">
+                                {a.plan}
+                                {coaches.find(c => c.id === a.coach_id)?.nombre &&
+                                  ` · ${coaches.find(c => c.id === a.coach_id).nombre.split(' ')[0]}`}
+                              </div>
                             </div>
                             {formExtra.alumno_id === a.id && <span className="text-red-500 text-sm shrink-0">✓</span>}
                           </button>
@@ -684,6 +713,16 @@ export default function HorariosCalendar({
                       </div>
                     )}
                   </div>
+                  {!soloEditarCoachId && coaches.length > 0 && (
+                    <div>
+                      <label className="text-[10px] text-zinc-500 uppercase tracking-wider block mb-1.5">Coach</label>
+                      <select value={formExtra.coach_id} onChange={e => setFormExtra(f => ({ ...f, coach_id: e.target.value }))}
+                        className="w-full bg-raised border border-border text-foreground rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-red-600">
+                        <option value="">Sin asignar</option>
+                        {coaches.map(c => <option key={c.id} value={c.id}>{c.nombre.split(' ')[0]}</option>)}
+                      </select>
+                    </div>
+                  )}
                   <HorarioForm formExtra={formExtra} setFormExtra={setFormExtra} />
                 </div>
               ) : (
@@ -704,32 +743,16 @@ export default function HorariosCalendar({
                       className="w-full bg-raised border border-border text-foreground rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-red-600 transition-colors"
                     />
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
+                  {!soloEditarCoachId && coaches.length > 0 && (
                     <div>
-                      <label className="text-[10px] text-zinc-500 uppercase tracking-wider block mb-1.5">Plan</label>
-                      <select value={formExtra.plan} onChange={e => setFormExtra(f => ({ ...f, plan: e.target.value }))}
+                      <label className="text-[10px] text-zinc-500 uppercase tracking-wider block mb-1.5">Coach</label>
+                      <select value={formExtra.coach_id} onChange={e => setFormExtra(f => ({ ...f, coach_id: e.target.value }))}
                         className="w-full bg-raised border border-border text-foreground rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-red-600">
-                        <option value="1x/sem">1x/sem</option>
-                        <option value="2x/sem">2x/sem</option>
-                        <option value="3x/sem">3x/sem</option>
-                        <option value="4x/sem">4x/sem</option>
-                        <option value="5x/sem">5x/sem</option>
-                        <option value="6x/sem">6x/sem</option>
-                        <option value="Full">Full</option>
-                        <option value="Personalizado">Personalizado</option>
+                        <option value="">Sin asignar</option>
+                        {coaches.map(c => <option key={c.id} value={c.id}>{c.nombre.split(' ')[0]}</option>)}
                       </select>
                     </div>
-                    {!soloEditarCoachId && coaches.length > 0 && (
-                      <div>
-                        <label className="text-[10px] text-zinc-500 uppercase tracking-wider block mb-1.5">Coach</label>
-                        <select value={formExtra.coach_id} onChange={e => setFormExtra(f => ({ ...f, coach_id: e.target.value }))}
-                          className="w-full bg-raised border border-border text-foreground rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-red-600">
-                          <option value="">Sin asignar</option>
-                          {coaches.map(c => <option key={c.id} value={c.id}>{c.nombre.split(' ')[0]}</option>)}
-                        </select>
-                      </div>
-                    )}
-                  </div>
+                  )}
                   <HorarioForm formExtra={formExtra} setFormExtra={setFormExtra} />
                 </div>
               )}
@@ -765,7 +788,7 @@ export default function HorariosCalendar({
                   className="flex-1 border border-border-strong text-zinc-500 hover:text-foreground text-sm py-2.5 rounded-xl transition-all">Cancelar</button>
                 <button onClick={() => guardarExtra(false)} disabled={guardandoExtra}
                   className="flex-1 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white text-sm font-bold py-2.5 rounded-xl transition-colors">
-                  {guardandoExtra ? 'Guardando…' : tipoAlumno === 'nuevo' ? 'Crear y agregar' : 'Agregar clase'}
+                  {guardandoExtra ? 'Guardando…' : 'Agregar clase'}
                 </button>
               </div>
             )}
@@ -784,13 +807,10 @@ function HorarioForm({ formExtra, setFormExtra }) {
       <div className="text-[10px] text-zinc-500 uppercase tracking-wider">Horario extra</div>
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="text-[10px] text-zinc-500 uppercase tracking-wider block mb-1.5">Día</label>
-          <select value={formExtra.dia} onChange={e => setFormExtra(f => ({ ...f, dia: e.target.value }))}
-            className="w-full bg-raised border border-border text-foreground rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-red-600">
-            {['lunes','martes','miercoles','jueves','viernes','sabado'].map(d => (
-              <option key={d} value={d}>{DIAS_LABEL_LARGO[d]}</option>
-            ))}
-          </select>
+          <label className="text-[10px] text-zinc-500 uppercase tracking-wider block mb-1.5">Fecha</label>
+          <input type="date" value={formExtra.fecha} min={toDateStr(new Date())}
+            onChange={e => setFormExtra(f => ({ ...f, fecha: e.target.value }))}
+            className="w-full bg-raised border border-border text-foreground rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-red-600" />
         </div>
         <div>
           <label className="text-[10px] text-zinc-500 uppercase tracking-wider block mb-1.5">Hora</label>

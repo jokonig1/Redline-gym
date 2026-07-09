@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import ModalClase    from '@/app/dashboard/_components/ModalClase'
+import { nombreSlot } from '@/app/dashboard/_components/calendar/utils'
 import LoadingSpinner from '@/app/dashboard/_components/LoadingSpinner'
 
 const HORAS_LABEL = {
@@ -126,8 +127,8 @@ export default function CoachInicio() {
               <div className="flex flex-col sm:flex-row sm:flex-wrap gap-3">
                 {porHora[hora].map((slot, i) => {
                   const asist = asistencias.find(a => a.alumno_horario_id === slot.id)
-                  const iniciales = slot.alumno?.nombre
-                    ?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
+                  const nombre = nombreSlot(slot)
+                  const iniciales = nombre.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
 
                   return (
                     <button
@@ -139,11 +140,14 @@ export default function CoachInicio() {
                         {iniciales}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="text-sm font-bold text-foreground truncate">{slot.alumno?.nombre}</div>
+                        <div className="text-sm font-bold text-foreground truncate">{nombre}</div>
                         <div className="text-xs text-zinc-500 mt-0.5">
                           {slot.tipo === 'semipersonalizado' ? 'Semi Personalizado' : 'Personalizado'}
                           {slot.tipo_slot === 'movida' && (
                             <span className="ml-1.5 text-amber-500">↗ movida</span>
+                          )}
+                          {slot.fecha && (
+                            <span className="ml-1.5 text-red-400">· Extra</span>
                           )}
                         </div>
                       </div>

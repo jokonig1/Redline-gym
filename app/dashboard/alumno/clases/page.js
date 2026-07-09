@@ -91,6 +91,7 @@ export default function MisClases() {
   function getSlotsParaDia(dia, fechaStr) {
     const regulares = horarios
       .filter(h => h.dia === dia)
+      .filter(h => !h.fecha || h.fecha === fechaStr)
       .filter(h => {
         const exc = excepciones.find(e => e.alumno_horario_id === h.id && e.fecha_original === fechaStr)
         return !exc || (!exc.cancelado && !exc.fecha_nueva)
@@ -108,7 +109,7 @@ export default function MisClases() {
     return [...regulares, ...movidas].sort((a,b) => (a.hora||'').localeCompare(b.hora||''))
   }
 
-  const totalClasesPorSemana = horarios.length
+  const totalClasesPorSemana = horarios.filter(h => !h.fecha).length
 
   return (
     <div className="max-w-lg">
@@ -205,7 +206,7 @@ export default function MisClases() {
             <div className="text-xs text-zinc-500 uppercase tracking-widest">Horario fijo semanal</div>
           </div>
           {DIAS_ORDER.map(dia => {
-            const slots = horarios.filter(h => h.dia === dia)
+            const slots = horarios.filter(h => h.dia === dia && !h.fecha)
               .sort((a,b) => (a.hora||'').localeCompare(b.hora||''))
             if (slots.length === 0) return null
             return (

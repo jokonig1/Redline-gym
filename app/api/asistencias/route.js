@@ -47,10 +47,10 @@ export async function POST(req) {
   let query = supabaseAdmin
     .from('asistencias')
     .select('id')
-    .eq('alumno_id', alumno_id)
     .eq('coach_id', coach_id)
     .eq('fecha', fecha)
 
+  query = alumno_id ? query.eq('alumno_id', alumno_id) : query.is('alumno_id', null)
   if (alumno_horario_id) query = query.eq('alumno_horario_id', alumno_horario_id)
   const { data: existing } = await query.maybeSingle()
 

@@ -15,7 +15,7 @@ export async function GET(req) {
 
   const { data: horarios } = await supabaseAdmin
     .from('alumno_horarios')
-    .select('id, dia, hora, tipo, coach_id, coach:coach_id(nombre)')
+    .select('id, dia, hora, tipo, coach_id, fecha, coach:coach_id(nombre)')
     .eq('alumno_id', alumno_id)
     .eq('activo', true)
     .order('dia').order('hora')

@@ -1,4 +1,5 @@
 'use client'
+import { nombreSlot } from './utils'
 
 export default function ModalMover({
   slot, form, setForm,
@@ -13,7 +14,7 @@ export default function ModalMover({
           <div>
             <h3 className="text-foreground font-bold text-base">Mover clase</h3>
             <p className="text-xs text-zinc-500 mt-1">
-              <span className="text-foreground-2">{slot.alumno?.nombre}</span>
+              <span className="text-foreground-2">{nombreSlot(slot)}</span>
               {' · '}
               <span className="capitalize">{slot.dia}</span>
               {' '}{slot.hora?.slice(0, 5)}

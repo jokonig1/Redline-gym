@@ -41,7 +41,7 @@ export async function GET() {
     { data: costosRegistros },
   ] = await Promise.all([
     supabaseAdmin.from('alumnos').select('id, activo, plan, tipo_clase, coach_id, created_at'),
-    supabaseAdmin.from('alumno_horarios').select('alumno_id, dia, hora').eq('activo', true),
+    supabaseAdmin.from('alumno_horarios').select('alumno_id, dia, hora').eq('activo', true).is('fecha', null),
     supabaseAdmin.from('alumno_horarios_excepciones')
       .select('cancelado, fecha_nueva')
       .gte('fecha_original', mesInicio)

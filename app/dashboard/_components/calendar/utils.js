@@ -12,6 +12,13 @@ export function toDateStr(fecha) {
 }
 
 /**
+ * Nombre a mostrar de un slot: alumno registrado, o invitado sin ficha.
+ */
+export function nombreSlot(slot) {
+  return slot.alumno?.nombre || slot.invitado_nombre || '—'
+}
+
+/**
  * Resuelve el color de un slot según:
  *  1. color guardado en el coach del slot (join directo — fuente de verdad)
  *  2. color guardado en el array de coaches cargado en la página

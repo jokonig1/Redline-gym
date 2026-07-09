@@ -40,7 +40,7 @@ export default function ModalClase({ slot, coachId, fecha, onClose }) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        alumno_id:         alumno.id,
+        alumno_id:         alumno?.id || null,
         coach_id:          coachId,
         alumno_horario_id: slot.id,
         fecha,
@@ -58,10 +58,13 @@ export default function ModalClase({ slot, coachId, fecha, onClose }) {
     setSavedRutina(false)
     setErrorRutina('')
 
-    const res = await fetch(
-      `/api/sesiones-rutina?alumno_id=${alumno.id}&rutina_nombre=${encodeURIComponent(rutina.nombre)}`
-    )
-    const ultima = res.ok ? await res.json() : null
+    let ultima = null
+    if (alumno?.id) {
+      const res = await fetch(
+        `/api/sesiones-rutina?alumno_id=${alumno.id}&rutina_nombre=${encodeURIComponent(rutina.nombre)}`
+      )
+      ultima = res.ok ? await res.json() : null
+    }
     setUltimaSesion(ultima)
 
     const ejerciciosBase = (rutina.ejercicios || []).map(ej => {
@@ -122,7 +125,7 @@ export default function ModalClase({ slot, coachId, fecha, onClose }) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        alumno_id:             alumno.id,
+        alumno_id:             alumno?.id || null,
         coach_id:              coachId,
         alumno_horario_id:     slot.id,
         fecha,
@@ -154,7 +157,7 @@ export default function ModalClase({ slot, coachId, fecha, onClose }) {
         {/* Header */}
         <div className="flex items-start justify-between px-5 pt-5 pb-4 border-b border-border shrink-0">
           <div>
-            <div className="text-base font-black text-foreground">{alumno?.nombre}</div>
+            <div className="text-base font-black text-foreground">{alumno?.nombre || slot.invitado_nombre}</div>
             <div className="flex items-center gap-2 mt-0.5">
               <span className="text-xs text-zinc-500">{slot.hora?.slice(0, 5)}</span>
               <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-hover-md text-zinc-500 font-medium">
