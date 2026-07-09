@@ -9,6 +9,8 @@ export async function GET(req) {
   const { searchParams } = new URL(req.url)
   const alumnoId     = searchParams.get('alumno_id')
   const rutinaNombre = searchParams.get('rutina_nombre')
+  const fechaDesde   = searchParams.get('fecha_desde')
+  const fechaHasta   = searchParams.get('fecha_hasta')
   const limit        = Math.min(parseInt(searchParams.get('limit') || '50'), 200)
 
   if (!alumnoId) return Response.json(rutinaNombre ? null : [])
@@ -25,6 +27,9 @@ export async function GET(req) {
     return Response.json(data)
   }
 
+  if (fechaDesde) query = query.gte('fecha', fechaDesde)
+  if (fechaHasta) query = query.lte('fecha', fechaHasta)
+
   const { data } = await query.limit(limit)
   return Response.json(data || [])
 }
@@ -36,21 +41,38 @@ export async function POST(req) {
   const { data: body, error: validationError } = parseBody(sesionRutinaSchema, await req.json())
   if (validationError) return validationError
 
-  const { data, error } = await supabaseAdmin
+  // Una sesión por alumno/clase/día — si ya existe, se actualiza en vez de duplicar.
+  let existeQuery = supabaseAdmin
     .from('sesiones_rutina')
-    .insert({
-      alumno_id:             body.alumno_id,
-      coach_id:              body.coach_id,
-      alumno_horario_id:     body.alumno_horario_id || null,
-      fecha:                 body.fecha,
-      rutina_nombre:         body.rutina_nombre,
-      rutina_predefinida_id: body.rutina_predefinida_id || null,
-      ejercicios:            body.ejercicios || [],
-      notas:                 body.notas || null,
-    })
-    .select()
-    .single()
+    .select('id')
+    .eq('coach_id', body.coach_id)
+    .eq('fecha', body.fecha)
+  existeQuery = body.alumno_id ? existeQuery.eq('alumno_id', body.alumno_id) : existeQuery.is('alumno_id', null)
+  if (body.alumno_horario_id) existeQuery = existeQuery.eq('alumno_horario_id', body.alumno_horario_id)
+  const { data: existente } = await existeQuery.maybeSingle()
 
-  if (error) return Response.json({ error: 'Error al guardar la sesión' }, { status: 500 })
-  return Response.json(data)
+  const fila = {
+    alumno_id:             body.alumno_id,
+    coach_id:              body.coach_id,
+    alumno_horario_id:     body.alumno_horario_id || null,
+    fecha:                 body.fecha,
+    rutina_nombre:         body.rutina_nombre,
+    rutina_predefinida_id: body.rutina_predefinida_id || null,
+    ejercicios:            body.ejercicios || [],
+    notas:                 body.notas || null,
+  }
+
+  let result
+  if (existente?.id) {
+    const { data, error } = await supabaseAdmin
+      .from('sesiones_rutina').update(fila).eq('id', existente.id).select().single()
+    result = { data, error }
+  } else {
+    const { data, error } = await supabaseAdmin
+      .from('sesiones_rutina').insert(fila).select().single()
+    result = { data, error }
+  }
+
+  if (result.error) return Response.json({ error: 'Error al guardar la sesión' }, { status: 500 })
+  return Response.json(result.data)
 }

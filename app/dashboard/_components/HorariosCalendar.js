@@ -49,8 +49,11 @@ export default function HorariosCalendar({
   // Filtro por coach
   const [coachFiltro, setCoachFiltro] = useState(soloEditarCoachId || null)
 
-  // Modal acciones rápidas (Ver perfil / Mover clase)
-  const [slotAccion,   setSlotAccion]   = useState(null)
+  // Modal acciones rápidas (Ver perfil / Mover clase / Eliminar clase)
+  const [slotAccion,      setSlotAccion]      = useState(null)
+  const [confirmEliminar, setConfirmEliminar] = useState(false)
+  const [eliminando,      setEliminando]      = useState(false)
+  const [errorEliminar,   setErrorEliminar]   = useState('')
 
   const [modalSlot,    setModalSlot]    = useState(null)
   const [moverForm,    setMoverForm]    = useState({ fecha_nueva:'', hora_nueva:'', motivo:'' })
@@ -72,6 +75,31 @@ export default function HorariosCalendar({
 
   function abrirAcciones(slot) {
     setSlotAccion(slot)
+    setConfirmEliminar(false)
+    setErrorEliminar('')
+  }
+
+  async function eliminarClase() {
+    setEliminando(true)
+    setErrorEliminar('')
+    try {
+      if (slotAccion.fecha) {
+        // Clase puntual (extra/sobrecupo/invitado): solo existía para esa fecha, se borra directo.
+        const supabase = createClient()
+        const { error } = await supabase.from('alumno_horarios').delete().eq('id', slotAccion.id)
+        if (error) throw new Error(error.message)
+        setSlotAccion(null)
+        window.location.reload()
+        return
+      }
+      // Clase recurrente: se cancela solo esta semana (reversible con "Restaurar").
+      await onGuardar(slotAccion, { fecha_nueva: null, hora_nueva: null, motivo: 'Eliminada', cancelado: true })
+      setSlotAccion(null)
+    } catch (err) {
+      setErrorEliminar(err.message || 'Error al eliminar.')
+    } finally {
+      setEliminando(false)
+    }
   }
 
   function irAPerfil() {
@@ -591,7 +619,53 @@ export default function HorariosCalendar({
                   <span className="ml-auto text-zinc-400">›</span>
                 </button>
               )}
+
+              {(!soloEditarCoachId || slotAccion.coach_id === soloEditarCoachId) && !confirmEliminar && (
+                <button
+                  onClick={() => setConfirmEliminar(true)}
+                  className="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl hover:bg-red-900/10 transition-colors text-left"
+                >
+                  <span className="text-lg">✕</span>
+                  <div>
+                    <div className="text-sm font-semibold text-red-400">Eliminar clase</div>
+                    <div className="text-[11px] text-zinc-500">
+                      {slotAccion.fecha ? 'Se borra por completo' : 'Se cancela solo esta semana'}
+                    </div>
+                  </div>
+                  <span className="ml-auto text-zinc-400">›</span>
+                </button>
+              )}
             </div>
+
+            {confirmEliminar && (
+              <div className="px-4 pb-3">
+                <div className="p-3 bg-red-900/10 border border-red-900/30 rounded-xl">
+                  <p className="text-xs text-zinc-400 mb-3">
+                    {slotAccion.fecha
+                      ? '¿Eliminar esta clase puntual? No se puede deshacer.'
+                      : '¿Eliminar esta clase de esta semana? La próxima semana vuelve a aparecer normal — se puede deshacer con "Restaurar".'}
+                  </p>
+                  {errorEliminar && (
+                    <p className="text-xs text-red-400 mb-3">{errorEliminar}</p>
+                  )}
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setConfirmEliminar(false)}
+                      className="flex-1 border border-border-strong text-zinc-500 hover:text-foreground text-xs py-2 rounded-lg"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      onClick={eliminarClase}
+                      disabled={eliminando}
+                      className="flex-1 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white text-xs font-bold py-2 rounded-lg transition-colors"
+                    >
+                      {eliminando ? 'Eliminando…' : 'Sí, eliminar'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Cancelar */}
             <div className="px-3 pb-4">
@@ -599,7 +673,7 @@ export default function HorariosCalendar({
                 onClick={() => setSlotAccion(null)}
                 className="w-full py-3 rounded-xl border border-border-strong text-zinc-500 hover:text-foreground text-sm font-medium transition-all"
               >
-                Cancelar
+                Cerrar
               </button>
             </div>
           </div>

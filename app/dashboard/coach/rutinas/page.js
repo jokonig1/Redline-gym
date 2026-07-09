@@ -2,6 +2,8 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import LoadingSpinner from '@/app/dashboard/_components/LoadingSpinner'
+import ExercisePicker from '@/app/dashboard/_components/ExercisePicker'
+import { resolverEjercicio } from '@/app/dashboard/_components/ejerciciosCatalogo'
 
 export default function CoachRutinas() {
   const [coachId, setCoachId]     = useState(null)
@@ -82,12 +84,18 @@ export default function CoachRutinas() {
     setSaving(true)
     setError('')
 
+    // Resuelve cada nombre contra el catálogo compartido (usa el canónico si ya existe, o lo crea).
+    const ejerciciosResueltos = await Promise.all(ejerciciosValidos.map(async e => {
+      const data = await resolverEjercicio(e.nombre)
+      return { nombre: data?.nombre || e.nombre, orden: e.orden }
+    }))
+
     let res
     if (modal.id) {
       res = await fetch(`/api/rutinas-predefinidas/${modal.id}`, {
         method:  'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ nombre: modal.nombre.trim(), ejercicios: ejerciciosValidos }),
+        body:    JSON.stringify({ nombre: modal.nombre.trim(), ejercicios: ejerciciosResueltos }),
       })
     } else {
       res = await fetch('/api/rutinas-predefinidas', {
@@ -96,7 +104,7 @@ export default function CoachRutinas() {
         body:    JSON.stringify({
           coach_id:   coachId,
           nombre:     modal.nombre.trim(),
-          ejercicios: ejerciciosValidos,
+          ejercicios: ejerciciosResueltos,
           orden:      rutinas.length,
         }),
       })
@@ -233,10 +241,9 @@ export default function CoachRutinas() {
                   {modal.ejercicios.map((ej, idx) => (
                     <div key={idx} className="flex items-center gap-2">
                       <span className="text-[10px] text-zinc-600 w-5 text-center shrink-0">{idx + 1}</span>
-                      <input
-                        type="text"
+                      <ExercisePicker
                         value={ej.nombre}
-                        onChange={e => setEjercicio(idx, e.target.value)}
+                        onChange={val => setEjercicio(idx, val)}
                         placeholder="Nombre del ejercicio"
                         className="flex-1 bg-raised border border-border text-foreground rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-600 transition-colors placeholder:text-zinc-600"
                       />

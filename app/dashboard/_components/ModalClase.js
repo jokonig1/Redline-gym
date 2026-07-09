@@ -1,5 +1,8 @@
 'use client'
 import { useState, useEffect } from 'react'
+import ResumenSemanalRutina from './ResumenSemanalRutina'
+import ExercisePicker from './ExercisePicker'
+import { resolverEjercicio } from './ejerciciosCatalogo'
 
 export default function ModalClase({ slot, coachId, fecha, onClose }) {
   const alumno = slot.alumno
@@ -17,21 +20,35 @@ export default function ModalClase({ slot, coachId, fecha, onClose }) {
   const [notas,            setNotas]            = useState('')
   const [savedRutina,      setSavedRutina]      = useState(false)
   const [errorRutina,      setErrorRutina]      = useState('')
+  const [rutinaGuardadaCount, setRutinaGuardadaCount] = useState(0)
 
   useEffect(() => {
     async function load() {
-      const [asistRes, rutinasRes] = await Promise.all([
+      const [asistRes, rutinasRes, sesionRes] = await Promise.all([
         fetch(`/api/asistencias?coach_id=${coachId}&alumno_horario_id=${slot.id}&fecha=${fecha}`),
         fetch(`/api/rutinas-predefinidas?coach_id=${coachId}`),
+        alumno?.id
+          ? fetch(`/api/sesiones-rutina?alumno_id=${alumno.id}&fecha_desde=${fecha}&fecha_hasta=${fecha}`)
+          : Promise.resolve(null),
       ])
       if (asistRes.ok) {
         const asist = await asistRes.json()
         if (asist) { setAsistio(asist.asistio); setAsistenciaId(asist.id) }
       }
       if (rutinasRes.ok) setRutinas(await rutinasRes.json())
+      if (sesionRes?.ok) {
+        const sesiones = await sesionRes.json()
+        const sesionHoy = (sesiones || []).find(s => s.alumno_horario_id === slot.id) || sesiones?.[0]
+        if (sesionHoy) {
+          setRutinaActiva({ id: sesionHoy.rutina_predefinida_id, nombre: sesionHoy.rutina_nombre })
+          setEjerciciosHoy(sesionHoy.ejercicios || [])
+          setNotas(sesionHoy.notas || '')
+          setSavedRutina(true)
+        }
+      }
     }
     load()
-  }, [coachId, slot.id, fecha])
+  }, [coachId, slot.id, fecha, alumno?.id])
 
   async function marcarAsistencia(valor) {
     setGuardandoAsist(true)
@@ -80,7 +97,16 @@ export default function ModalClase({ slot, coachId, fecha, onClose }) {
     setLoadingRutina(false)
   }
 
+  function crearRutinaNueva() {
+    setRutinaActiva({ id: null, nombre: '' })
+    setUltimaSesion(null)
+    setEjerciciosHoy([])
+    setSavedRutina(false)
+    setErrorRutina('')
+  }
+
   function setSerie(ejIdx, serieIdx, field, value) {
+    setSavedRutina(false)
     setEjerciciosHoy(prev => prev.map((ej, i) => {
       if (i !== ejIdx) return ej
       return {
@@ -91,6 +117,7 @@ export default function ModalClase({ slot, coachId, fecha, onClose }) {
   }
 
   function agregarSerie(ejIdx) {
+    setSavedRutina(false)
     setEjerciciosHoy(prev => prev.map((ej, i) => {
       if (i !== ejIdx) return ej
       const ultima = ej.series[ej.series.length - 1]
@@ -99,6 +126,7 @@ export default function ModalClase({ slot, coachId, fecha, onClose }) {
   }
 
   function quitarSerie(ejIdx, serieIdx) {
+    setSavedRutina(false)
     setEjerciciosHoy(prev => prev.map((ej, i) => {
       if (i !== ejIdx) return ej
       const nuevas = ej.series.filter((_, j) => j !== serieIdx)
@@ -107,20 +135,65 @@ export default function ModalClase({ slot, coachId, fecha, onClose }) {
   }
 
   function renombrarEjercicio(ejIdx, nombre) {
+    setSavedRutina(false)
     setEjerciciosHoy(prev => prev.map((ej, i) => i === ejIdx ? { ...ej, nombre } : ej))
   }
 
   function eliminarEjercicio(ejIdx) {
+    setSavedRutina(false)
     setEjerciciosHoy(prev => prev.filter((_, i) => i !== ejIdx))
   }
 
   function agregarEjercicio() {
+    setSavedRutina(false)
     setEjerciciosHoy(prev => [...prev, { nombre: '', series: [{ peso: '', reps: '' }] }])
   }
 
   async function guardarSesion() {
     setGuardandoRutina(true)
     setErrorRutina('')
+
+    // Resuelve cada nombre contra el catálogo compartido antes de guardar.
+    const ejerciciosResueltos = await Promise.all(ejerciciosHoy.map(async ej => {
+      if (!ej.nombre.trim()) return ej
+      const data = await resolverEjercicio(ej.nombre.trim())
+      return { ...ej, nombre: data?.nombre || ej.nombre.trim() }
+    }))
+
+    let rutinaPredefinidaId = rutinaActiva.id
+    if (rutinaPredefinidaId === null) {
+      if (!rutinaActiva.nombre.trim()) {
+        setErrorRutina('Ponele un nombre a la rutina.')
+        setGuardandoRutina(false)
+        return
+      }
+      const ejerciciosConNombre = ejerciciosResueltos.filter(e => e.nombre.trim())
+      if (ejerciciosConNombre.length === 0) {
+        setErrorRutina('Agregá al menos un ejercicio.')
+        setGuardandoRutina(false)
+        return
+      }
+      const resRutina = await fetch('/api/rutinas-predefinidas', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          coach_id:   coachId,
+          nombre:     rutinaActiva.nombre.trim(),
+          ejercicios: ejerciciosConNombre.map((e, i) => ({ nombre: e.nombre.trim(), orden: i })),
+        }),
+      })
+      if (!resRutina.ok) {
+        const err = await resRutina.json().catch(() => ({}))
+        setErrorRutina(err.error || 'Error al crear la rutina.')
+        setGuardandoRutina(false)
+        return
+      }
+      const nuevaRutina = await resRutina.json()
+      rutinaPredefinidaId = nuevaRutina.id
+      setRutinas(prev => [...prev, nuevaRutina])
+      setRutinaActiva(r => ({ ...r, id: nuevaRutina.id }))
+    }
+
     const res = await fetch('/api/sesiones-rutina', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -130,13 +203,14 @@ export default function ModalClase({ slot, coachId, fecha, onClose }) {
         alumno_horario_id:     slot.id,
         fecha,
         rutina_nombre:         rutinaActiva.nombre,
-        rutina_predefinida_id: rutinaActiva.id,
-        ejercicios:            ejerciciosHoy,
+        rutina_predefinida_id: rutinaPredefinidaId,
+        ejercicios:            ejerciciosResueltos,
         notas,
       }),
     })
     if (res.ok) {
       setSavedRutina(true)
+      setRutinaGuardadaCount(c => c + 1)
     } else {
       const err = await res.json()
       setErrorRutina(err.error || 'Error al guardar la sesión.')
@@ -203,38 +277,51 @@ export default function ModalClase({ slot, coachId, fecha, onClose }) {
             )}
           </div>
 
+          {/* Resumen semanal de rutinas */}
+          <ResumenSemanalRutina alumnoId={alumno?.id} refreshKey={rutinaGuardadaCount} />
+
           {/* Rutina */}
           <div>
             <div className="text-[10px] text-zinc-500 uppercase tracking-widest mb-3">Rutina de hoy</div>
 
-            {rutinas.length === 0 ? (
-              <p className="text-xs text-zinc-600 italic">
-                No tenés rutinas predefinidas. Creá una en la sección Rutinas.
-              </p>
-            ) : (
-              <>
-                <div className="flex flex-wrap gap-2 mb-4">
-                  {rutinas.map(r => (
-                    <button
-                      key={r.id}
-                      onClick={() => seleccionarRutina(r)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${
-                        rutinaActiva?.id === r.id
-                          ? 'bg-red-600/20 border-red-600/50 text-red-400'
-                          : 'border-border-strong text-zinc-500 hover:text-foreground hover:border-border-strong'
-                      }`}
-                    >
-                      {r.nombre}
-                    </button>
-                  ))}
-                </div>
+            <div className="flex gap-2 mb-4">
+              <select
+                value={rutinaActiva?.id || ''}
+                onChange={e => {
+                  const r = rutinas.find(x => x.id === e.target.value)
+                  if (r) seleccionarRutina(r)
+                }}
+                className="flex-1 bg-raised border border-border text-foreground rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-red-600"
+              >
+                <option value="">
+                  {rutinas.length === 0 ? 'Sin rutinas predefinidas' : 'Elegir rutina existente…'}
+                </option>
+                {rutinas.map(r => <option key={r.id} value={r.id}>{r.nombre}</option>)}
+              </select>
+              <button
+                onClick={crearRutinaNueva}
+                className="shrink-0 px-3.5 rounded-lg border border-dashed border-border-strong text-zinc-500 hover:text-red-400 hover:border-red-900/40 text-xs font-bold transition-colors"
+              >
+                + Nueva
+              </button>
+            </div>
 
-                {loadingRutina && (
-                  <div className="text-xs text-zinc-500 text-center py-4">Cargando sesión anterior…</div>
-                )}
+            {loadingRutina && (
+              <div className="text-xs text-zinc-500 text-center py-4">Cargando sesión anterior…</div>
+            )}
 
-                {rutinaActiva && !loadingRutina && (
+            {rutinaActiva && !loadingRutina && (
                   <div className="space-y-4">
+
+                    {rutinaActiva.id === null && (
+                      <input
+                        type="text"
+                        value={rutinaActiva.nombre}
+                        onChange={e => { setSavedRutina(false); setRutinaActiva(r => ({ ...r, nombre: e.target.value })) }}
+                        placeholder="Nombre de la rutina (ej: Piernas)"
+                        className="w-full bg-raised border border-border text-foreground rounded-lg px-3 py-2.5 text-sm font-bold focus:outline-none focus:border-red-600 transition-colors placeholder:text-zinc-600 placeholder:font-normal"
+                      />
+                    )}
 
                     {ultimaSesion && (
                       <div className="text-[10px] text-zinc-600 text-center">
@@ -252,12 +339,11 @@ export default function ModalClase({ slot, coachId, fecha, onClose }) {
                       return (
                         <div key={ejIdx} className="bg-raised rounded-xl p-3">
                           <div className="flex items-center gap-2 mb-2">
-                            <input
-                              type="text"
+                            <ExercisePicker
                               value={ej.nombre}
-                              onChange={e => renombrarEjercicio(ejIdx, e.target.value)}
+                              onChange={val => renombrarEjercicio(ejIdx, val)}
                               placeholder="Nombre del ejercicio"
-                              className="flex-1 bg-transparent text-sm font-bold text-foreground placeholder:text-zinc-600 focus:outline-none border-b border-transparent focus:border-border-strong pb-0.5 transition-colors"
+                              className="bg-transparent text-sm font-bold text-foreground placeholder:text-zinc-600 focus:outline-none border-b border-transparent focus:border-border-strong pb-0.5 transition-colors"
                             />
                             <button
                               onClick={() => eliminarEjercicio(ejIdx)}
@@ -339,7 +425,7 @@ export default function ModalClase({ slot, coachId, fecha, onClose }) {
                       </label>
                       <textarea
                         value={notas}
-                        onChange={e => setNotas(e.target.value)}
+                        onChange={e => { setSavedRutina(false); setNotas(e.target.value) }}
                         rows={2}
                         placeholder="Observaciones de la sesión..."
                         className="w-full bg-raised border border-border text-foreground rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-red-600 resize-none transition-colors placeholder:text-zinc-600"
@@ -359,8 +445,6 @@ export default function ModalClase({ slot, coachId, fecha, onClose }) {
                     )}
                   </div>
                 )}
-              </>
-            )}
           </div>
         </div>
 

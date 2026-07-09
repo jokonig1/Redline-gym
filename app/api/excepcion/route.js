@@ -9,7 +9,7 @@ export async function POST(request) {
   const { data: body, error: validationError } = parseBody(excepcionSchema, await request.json())
   if (validationError) return validationError
 
-  const { alumno_horario_id, alumno_id, fecha_original, fecha_nueva, hora_nueva, motivo } = body
+  const { alumno_horario_id, alumno_id, fecha_original, fecha_nueva, hora_nueva, motivo, cancelado } = body
 
   const { data: existente } = await supabaseAdmin
     .from('alumno_horarios_excepciones')
@@ -24,7 +24,7 @@ export async function POST(request) {
     fecha_original,
     fecha_nueva: fecha_nueva || null,
     hora_nueva:  hora_nueva  || null,
-    cancelado:   false,
+    cancelado:   cancelado   || false,
     motivo:      motivo      || '',
   }
 

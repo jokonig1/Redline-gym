@@ -135,7 +135,7 @@ export default function CoachesPage() {
           const colorIdx  = coach.color !== null && coach.color !== undefined ? Number(coach.color) : i
           const color     = COLORES_COACH[colorIdx % COLORES_COACH.length]
           const initials  = coach.nombre?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
-          const capacidad = Math.min(Math.round((coach.total_alumnos / 35) * 100), 100)
+          const capacidad = Math.min(Math.round((coach.total_alumnos / 50) * 100), 100)
 
           return (
             <div key={coach.id}
@@ -226,7 +226,7 @@ export default function CoachesPage() {
               <div>
                 <div className="flex justify-between text-[10px] text-zinc-500 mb-1.5">
                   <span>Ocupación</span>
-                  <span>{coach.total_alumnos}/35</span>
+                  <span>{coach.total_alumnos}/50</span>
                 </div>
                 <div className="h-1.5 bg-raised rounded-full overflow-hidden">
                   <div
