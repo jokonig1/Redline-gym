@@ -6,13 +6,24 @@ import { asistenciaSchema, parseBody } from '@/lib/schemas'
  * GET /api/asistencias?coach_id=X&fecha=YYYY-MM-DD[&alumno_horario_id=Y]
  */
 export async function GET(req) {
-  const { response } = await requireAuth(['admin', 'coach'])
+  const { response } = await requireAuth(['admin', 'coach', 'alumno'])
   if (response) return response
 
   const { searchParams } = new URL(req.url)
   const coachId         = searchParams.get('coach_id')
   const alumnoHorarioId = searchParams.get('alumno_horario_id')
   const fecha           = searchParams.get('fecha')
+  const alumnoId        = searchParams.get('alumno_id')
+
+  // Historial completo de un alumno (usado por su propia vista "Mis clases")
+  if (alumnoId && !coachId) {
+    const { data } = await supabaseAdmin
+      .from('asistencias')
+      .select('*')
+      .eq('alumno_id', alumnoId)
+      .order('fecha')
+    return Response.json(data || [])
+  }
 
   if (!coachId || !fecha) return Response.json(alumnoHorarioId ? null : [])
 
