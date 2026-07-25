@@ -150,6 +150,11 @@ export default function CoachInicio() {
                           {slot.fecha && (
                             <span className="ml-1.5 text-red-400">· Extra</span>
                           )}
+                          {slot.coach_id !== profile.id && slot.coach?.nombre && (
+                            <span className="ml-1.5 text-amber-500">
+                              · Cubriendo a {slot.coach.nombre.split(' ')[0]}
+                            </span>
+                          )}
                         </div>
                       </div>
                       <div className="shrink-0">
@@ -182,6 +187,7 @@ export default function CoachInicio() {
           slot={modalSlot}
           coachId={profile.id}
           fecha={fechaHoy}
+          rutasAdmin={profile.rol === 'admin'}
           onClose={() => {
             setModalSlot(null)
             fetch(`/api/asistencias?coach_id=${profile.id}&fecha=${fechaHoy}`)

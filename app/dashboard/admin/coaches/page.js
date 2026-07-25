@@ -55,8 +55,11 @@ export default function CoachesPage() {
 
   async function toggleActivo(coach) {
     setMenuAbierto(null)
-    const supabase = createClient()
-    await supabase.from('profiles').update({ activo: !coach.activo }).eq('id', coach.id)
+    await fetch('/api/actualizar-coach', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: coach.id, activo: !coach.activo }),
+    })
     refetch()
   }
 
@@ -64,10 +67,10 @@ export default function CoachesPage() {
     setMenuAbierto(null)
     setErrorEditar('')
     setFormEditar({
-      id:       coach.id,
-      nombre:   coach.nombre   || '',
-      telefono: coach.telefono || '',
-      color:    coach.color    ?? null,
+      id:     coach.id,
+      nombre: coach.nombre || '',
+      email:  coach.email  || '',
+      color:  coach.color  ?? null,
     })
     setModalEditar(coach)
   }
@@ -80,10 +83,10 @@ export default function CoachesPage() {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        id:       formEditar.id,
-        nombre:   formEditar.nombre,
-        telefono: formEditar.telefono,
-        color:    formEditar.color,
+        id:     formEditar.id,
+        nombre: formEditar.nombre,
+        email:  formEditar.email,
+        color:  formEditar.color,
       }),
     })
 
@@ -261,18 +264,19 @@ export default function CoachesPage() {
               <div>
                 <label className="text-[10px] text-zinc-500 uppercase tracking-wider block mb-1.5">Nombre completo</label>
                 <input
-                  value={formEditar.nombre}
+                  value={formEditar.nombre || ''}
                   onChange={e => setFormEditar(f => ({ ...f, nombre: e.target.value }))}
                   className="w-full bg-raised border border-border text-foreground rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-red-600 transition-colors"
                 />
               </div>
 
               <div>
-                <label className="text-[10px] text-zinc-500 uppercase tracking-wider block mb-1.5">Teléfono</label>
+                <label className="text-[10px] text-zinc-500 uppercase tracking-wider block mb-1.5">Correo</label>
                 <input
-                  value={formEditar.telefono}
-                  onChange={e => setFormEditar(f => ({ ...f, telefono: e.target.value }))}
-                  placeholder="+56 9 xxxx xxxx"
+                  type="email"
+                  value={formEditar.email || ''}
+                  onChange={e => setFormEditar(f => ({ ...f, email: e.target.value }))}
+                  placeholder="coach@ejemplo.com"
                   className="w-full bg-raised border border-border text-foreground rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-red-600 transition-colors placeholder-zinc-600"
                 />
               </div>

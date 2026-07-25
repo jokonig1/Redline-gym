@@ -31,6 +31,7 @@ export default function TarjetaDiaria({
           {slot.tipo === 'semipersonalizado' ? 'Semi Personalizado' : 'Personalizado'}
           {slot.coach?.nombre && <span> · {slot.coach.nombre.split(' ')[0]}</span>}
           {slot._movida && <span style={{ color: '#f59e0b' }}> · Reagendada</span>}
+          {slot._cubiertoDe && <span style={{ color: '#f59e0b' }}> · Cubriendo a {slot._cubiertoDe.split(' ')[0]}</span>}
         </div>
       </div>
 

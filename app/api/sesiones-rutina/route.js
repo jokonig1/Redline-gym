@@ -1,9 +1,10 @@
 import { requireAuth } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 import { sesionRutinaSchema, parseBody } from '@/lib/schemas'
+import { coachTieneAccesoAlumno } from '@/lib/traspasos'
 
 export async function GET(req) {
-  const { response } = await requireAuth(['admin', 'coach', 'alumno'])
+  const { response, user, profile } = await requireAuth(['admin', 'coach', 'alumno'])
   if (response) return response
 
   const { searchParams } = new URL(req.url)
@@ -14,6 +15,13 @@ export async function GET(req) {
   const limit        = Math.min(parseInt(searchParams.get('limit') || '50'), 200)
 
   if (!alumnoId) return Response.json(rutinaNombre ? null : [])
+
+  if (profile?.rol === 'coach') {
+    const { data: alumno } = await supabaseAdmin.from('alumnos').select('id, coach_id').eq('id', alumnoId).single()
+    if (!alumno || !(await coachTieneAccesoAlumno(user.id, alumno))) {
+      return Response.json({ error: 'No tenés acceso a este alumno' }, { status: 403 })
+    }
+  }
 
   let query = supabaseAdmin
     .from('sesiones_rutina')

@@ -61,6 +61,7 @@ export default function DashboardLayout({ children }) {
       { label: 'Coaches',   icon: '◈', href: '/dashboard/admin/coaches' },
       { label: 'Horarios',  icon: '▦', href: '/dashboard/admin/horarios' },
       { label: 'Rutinas',   icon: '◈', href: '/dashboard/admin/rutinas' },
+      { label: 'Traspasos', icon: '⇄', href: '/dashboard/admin/traspasos' },
       { label: 'Métricas',  icon: '↗', href: '/dashboard/admin/kpis' },
       { label: 'Mi perfil', icon: '●', href: '/dashboard/admin/perfil' },
     ],
@@ -69,6 +70,7 @@ export default function DashboardLayout({ children }) {
       { label: 'Mis alumnos',  icon: '◉', href: '/dashboard/coach/alumnos' },
       { label: 'Mis horarios', icon: '▦', href: '/dashboard/coach/horarios' },
       { label: 'Rutinas',      icon: '◈', href: '/dashboard/coach/rutinas' },
+      { label: 'Traspasos',    icon: '⇄', href: '/dashboard/coach/traspasos' },
     ],
     alumno: [
       { label: 'Inicio',      icon: '⌂', href: '/dashboard/alumno' },

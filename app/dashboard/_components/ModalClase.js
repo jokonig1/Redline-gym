@@ -1,15 +1,24 @@
 'use client'
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import ResumenSemanalRutina from './ResumenSemanalRutina'
 import RutinaLogger from './RutinaLogger'
 
-export default function ModalClase({ slot, coachId, fecha, onClose }) {
+export default function ModalClase({ slot, coachId, fecha, rutasAdmin = false, onClose }) {
+  const router = useRouter()
   const alumno = slot.alumno
 
   const [asistio,          setAsistio]          = useState(null)
   const [asistenciaId,     setAsistenciaId]     = useState(null)
   const [guardandoAsist,   setGuardandoAsist]   = useState(false)
   const [refreshResumen,   setRefreshResumen]   = useState(0)
+  const [menuAbierto,      setMenuAbierto]      = useState(false)
+
+  function irAPerfil() {
+    if (!alumno?.id) return
+    const base = rutasAdmin ? '/dashboard/admin/alumnos' : '/dashboard/coach/alumnos'
+    router.push(`${base}/${alumno.id}`)
+  }
 
   useEffect(() => {
     fetch(`/api/asistencias?coach_id=${coachId}&alumno_horario_id=${slot.id}&fecha=${fecha}`)
@@ -51,10 +60,34 @@ export default function ModalClase({ slot, coachId, fecha, onClose }) {
               </span>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="text-zinc-600 hover:text-foreground w-8 h-8 flex items-center justify-center rounded-lg hover:bg-hover-md transition-all"
-          >✕</button>
+          <div className="flex items-center gap-1 shrink-0">
+            {alumno?.id && (
+              <div className="relative">
+                <button
+                  onClick={() => setMenuAbierto(m => !m)}
+                  className="text-zinc-600 hover:text-foreground w-8 h-8 flex items-center justify-center rounded-lg hover:bg-hover-md transition-all text-lg leading-none"
+                  aria-label="Más opciones"
+                >⋮</button>
+                {menuAbierto && (
+                  <>
+                    <div className="fixed inset-0 z-10" onClick={() => setMenuAbierto(false)} />
+                    <div className="absolute right-0 top-9 z-20 bg-surface border border-border-strong rounded-xl shadow-xl py-1 w-36">
+                      <button
+                        onClick={irAPerfil}
+                        className="w-full text-left px-3.5 py-2.5 text-sm text-foreground hover:bg-hover-md transition-colors"
+                      >
+                        Ver perfil
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+            <button
+              onClick={onClose}
+              className="text-zinc-600 hover:text-foreground w-8 h-8 flex items-center justify-center rounded-lg hover:bg-hover-md transition-all"
+            >✕</button>
+          </div>
         </div>
 
         {/* Cuerpo con scroll */}

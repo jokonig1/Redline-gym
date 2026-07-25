@@ -6,7 +6,7 @@ export async function GET() {
   if (response) return response
   const { data, error } = await supabaseAdmin
     .from('profiles')
-    .select('id, nombre, color, rol')
+    .select('id, nombre, email, color, rol, activo')
     .in('rol', ['coach', 'admin'])
     .order('created_at', { ascending: true })
 

@@ -37,5 +37,11 @@ export async function GET() {
     excepciones = exc || []
   }
 
-  return Response.json({ horarios, excepciones })
+  // Traspasos temporales (todos, no solo los de hoy — el calendario navega a
+  // otras semanas/meses) para resolver qué coach cubre cada clase en cada fecha.
+  const { data: traspasos } = await supabaseAdmin
+    .from('traspasos_coach')
+    .select('*, origen:coach_origen_id(id,nombre), destino:coach_destino_id(id,nombre)')
+
+  return Response.json({ horarios, excepciones, traspasos: traspasos || [] })
 }

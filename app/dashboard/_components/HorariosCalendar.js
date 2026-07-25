@@ -3,7 +3,7 @@ import { useState, Fragment, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { DIAS, DIAS_LABEL, HORAS, COLORES_COACH } from '@/lib/constants'
-import { toDateStr, resolveColor, nombreSlot } from './calendar/utils'
+import { toDateStr, resolveColor, nombreSlot, coachEfectivo } from './calendar/utils'
 import TarjetaSemanal from './calendar/TarjetaSemanal'
 import TarjetaDiaria  from './calendar/TarjetaDiaria'
 import ModalMover     from './calendar/ModalMover'
@@ -31,10 +31,11 @@ function diaFromFecha(fechaStr) {
 }
 
 export default function HorariosCalendar({
-  horarios, excepciones, coaches, semana,
+  horarios, excepciones, traspasos = [], coaches, semana,
   semanaOffset, setSemanaOffset,
   onGuardar, onDeshacer,
   soloEditarCoachId = null,
+  rutasAdmin = false,
 }) {
   const router = useRouter()
 
@@ -105,7 +106,8 @@ export default function HorariosCalendar({
 
   function irAPerfil() {
     if (slotAccion?.alumno?.id) {
-      router.push(`/dashboard/admin/alumnos/${slotAccion.alumno.id}`)
+      const base = rutasAdmin ? '/dashboard/admin/alumnos' : '/dashboard/coach/alumnos'
+      router.push(`${base}/${slotAccion.alumno.id}`)
     }
     setSlotAccion(null)
   }
@@ -118,9 +120,19 @@ export default function HorariosCalendar({
 
   // ── Datos ───────────────────────────────────────────────────────────────────
 
-  const horariosFiltrados = coachFiltro
-    ? horarios.filter(h => h.coach_id === coachFiltro)
-    : horarios
+  // Si hay un traspaso vigente para ese horario en esa fecha, el slot se ve y
+  // se filtra como si fuera del coach destino (quien lo cubre ese día).
+  function aplicarCobertura(h, fechaStr) {
+    const t = coachEfectivo(h, fechaStr, traspasos)
+    if (!t) return { ...h, _coachIdOriginal: h.coach_id }
+    return {
+      ...h,
+      coach_id: t.coach_destino_id,
+      coach: t.destino || h.coach,
+      _cubiertoDe: h.coach?.nombre || null,
+      _coachIdOriginal: h.coach_id,
+    }
+  }
 
   const hoy = new Date()
   const mesActual = new Date(hoy.getFullYear(), hoy.getMonth() + Math.floor(semanaOffset / 4.33), 1)
@@ -137,9 +149,11 @@ export default function HorariosCalendar({
     const fechaStr = fecha ? toDateStr(fecha) : undefined
     if (!fechaStr) return []
 
-    const regulares = horariosFiltrados
+    const regulares = horarios
       .filter(h => h.dia === dia && h.hora?.slice(0,5) === hora)
       .filter(h => !h.fecha || h.fecha === fechaStr)
+      .map(h => aplicarCobertura(h, fechaStr))
+      .filter(h => !coachFiltro || h.coach_id === coachFiltro)
       .filter(h => {
         const exc = getExcepcion(h.id, fechaStr)
         return !exc || (!exc.cancelado && !exc.fecha_nueva && !exc.hora_nueva)
@@ -154,12 +168,13 @@ export default function HorariosCalendar({
         const h = horarios.find(x => x.id === exc.alumno_horario_id)
         const horaEfectiva = exc.hora_nueva?.slice(0,5) || h?.hora?.slice(0,5)
         if (horaEfectiva !== hora) return false
-        if (coachFiltro) return h?.coach_id === coachFiltro
+        if (coachFiltro) return h && aplicarCobertura(h, fechaStr).coach_id === coachFiltro
         return true
       })
       .map(exc => {
         const h = horarios.find(x => x.id === exc.alumno_horario_id)
-        return h ? { ...h, excepcion: exc, fechaStr: exc.fecha_original, _movida: true } : null
+        if (!h) return null
+        return { ...aplicarCobertura(h, fechaStr), excepcion: exc, fechaStr: exc.fecha_original, _movida: true }
       })
       .filter(Boolean)
 
@@ -490,28 +505,26 @@ export default function HorariosCalendar({
                 const esDomingo = fecha.getDay() === 0
 
                 const slots = esDomingo ? [] : [
-                  ...horariosFiltrados.filter(h => {
-                    if (h.dia !== diaNombre) return false
-                    if (h.fecha && h.fecha !== fechaStr) return false
-                    const exc = getExcepcion(h.id, fechaStr)
-                    return !exc || (!exc.cancelado && !exc.fecha_nueva)
-                  }),
+                  ...horarios
+                    .filter(h => h.dia === diaNombre)
+                    .filter(h => !h.fecha || h.fecha === fechaStr)
+                    .map(h => aplicarCobertura(h, fechaStr))
+                    .filter(h => !coachFiltro || h.coach_id === coachFiltro)
+                    .filter(h => {
+                      const exc = getExcepcion(h.id, fechaStr)
+                      return !exc || (!exc.cancelado && !exc.fecha_nueva)
+                    }),
                   ...excepciones
-                    .filter(exc => {
-                      if (!exc.cancelado && exc.fecha_nueva === fechaStr) {
-                        if (!coachFiltro) return true
-                        const h = horarios.find(x => x.id === exc.alumno_horario_id)
-                        return h?.coach_id === coachFiltro
-                      }
-                      return false
-                    })
+                    .filter(exc => !exc.cancelado && exc.fecha_nueva === fechaStr)
                     .map(exc => {
                       const h = horarios.find(x => x.id === exc.alumno_horario_id)
                       if (!h) return null
+                      const hc = aplicarCobertura(h, fechaStr)
                       // Aplicar hora nueva si existe
-                      return exc.hora_nueva ? { ...h, hora: exc.hora_nueva } : h
+                      return exc.hora_nueva ? { ...hc, hora: exc.hora_nueva } : hc
                     })
-                    .filter(Boolean),
+                    .filter(Boolean)
+                    .filter(h => !coachFiltro || h.coach_id === coachFiltro),
                 ]
 
                 celdas.push(
@@ -584,6 +597,7 @@ export default function HorariosCalendar({
                     {' · '}
                     {slotAccion.tipo === 'semipersonalizado' ? 'Semi Personalizado' : 'Personalizado'}
                     {slotAccion._movida && <span className="text-amber-500"> · Reagendada</span>}
+                    {slotAccion._cubiertoDe && <span className="text-amber-500"> · Cubriendo a {slotAccion._cubiertoDe.split(' ')[0]}</span>}
                   </div>
                 </div>
               </div>
@@ -591,7 +605,9 @@ export default function HorariosCalendar({
 
             {/* Acciones */}
             <div className="p-3 space-y-1.5">
-              {slotAccion.alumno?.id && (
+              {slotAccion.alumno?.id && (!soloEditarCoachId
+                || slotAccion.coach_id === soloEditarCoachId
+                || slotAccion._coachIdOriginal === soloEditarCoachId) && (
                 <button
                   onClick={irAPerfil}
                   className="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl hover:bg-hover-md transition-colors text-left"
