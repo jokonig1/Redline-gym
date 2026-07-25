@@ -164,7 +164,7 @@ export default function CoachTraspasos() {
   }
 
   return (
-    <div className="max-w-2xl space-y-6">
+    <div className="max-w-5xl space-y-6">
       <div>
         <h1 className="text-2xl font-black text-foreground">Traspasos</h1>
         <p className="text-xs text-zinc-500 mt-1">
@@ -172,10 +172,18 @@ export default function CoachTraspasos() {
         </p>
       </div>
 
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+
       {/* ── Traspaso temporal ── */}
       <div className="bg-surface border border-border rounded-xl p-5">
-        <div className="text-xs text-zinc-500 uppercase tracking-widest mb-4">
-          Traspaso temporal de clases
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-10 h-10 rounded-full bg-red-900/20 flex items-center justify-center text-red-400 text-lg font-bold shrink-0">
+            ↻
+          </div>
+          <div>
+            <div className="text-base font-black text-foreground">Traspaso temporal de clases</div>
+            <div className="text-[11px] text-zinc-500">Por vacaciones o algunos días — vuelve solo al terminar el rango</div>
+          </div>
         </div>
 
         <div className="space-y-3">
@@ -340,8 +348,14 @@ export default function CoachTraspasos() {
 
       {/* ── Traspaso permanente de alumnos ── */}
       <div className="bg-surface border border-border rounded-xl p-5">
-        <div className="text-xs text-zinc-500 uppercase tracking-widest mb-4">
-          Traspaso permanente de alumnos
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-10 h-10 rounded-full bg-red-900/20 flex items-center justify-center text-red-400 text-lg font-bold shrink-0">
+            →
+          </div>
+          <div>
+            <div className="text-base font-black text-foreground">Traspaso permanente de alumnos</div>
+            <div className="text-[11px] text-zinc-500">Le cambia el coach al alumno para siempre</div>
+          </div>
         </div>
         <p className="text-xs text-zinc-500 mb-4">
           Elegí uno o varios alumnos y a qué coach se los traspasás. Podés repetir la operación
@@ -416,6 +430,8 @@ export default function CoachTraspasos() {
             {guardandoPerm ? 'Traspasando…' : `Traspasar ${alumnosSelec.size > 1 ? `${alumnosSelec.size} alumnos` : 'alumno'}`}
           </button>
         </div>
+      </div>
+
       </div>
     </div>
   )

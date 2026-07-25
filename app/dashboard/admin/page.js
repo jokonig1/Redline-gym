@@ -87,7 +87,7 @@ export default function AdminInicio() {
   const horasOrdenadas = Object.keys(porHora).sort()
 
   return (
-    <div className="max-w-2xl">
+    <div className="max-w-5xl">
 
       {/* Bienvenida */}
       <div className="mb-6">
