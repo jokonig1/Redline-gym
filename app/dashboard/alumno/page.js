@@ -65,7 +65,7 @@ export default function AlumnoInicio() {
     <div className="bg-surface border border-border rounded-xl p-8 text-center max-w-md">
       <EmptyIcon tipo="advertencia" className="w-8 h-8 mb-3 text-zinc-500" />
       <div className="text-foreground font-bold mb-1">Perfil no encontrado</div>
-      <div className="text-zinc-500 text-sm">Contactá al administrador del gimnasio.</div>
+      <div className="text-zinc-500 text-sm">Contacta al administrador del gimnasio.</div>
     </div>
   )
 
@@ -178,8 +178,8 @@ export default function AlumnoInicio() {
         {clasesHoy.length === 0 ? (
           <div className="bg-surface border border-border rounded-2xl p-10 text-center">
             <EmptyIcon tipo="calendario" className="w-9 h-9 mb-2 text-zinc-500" />
-            <div className="text-foreground font-bold mb-1">No tenés clases hoy</div>
-            <div className="text-zinc-500 text-sm">Descansá o consultá tu horario en "Mis Clases"</div>
+            <div className="text-foreground font-bold mb-1">No tienes clases hoy</div>
+            <div className="text-zinc-500 text-sm">Descansa o consulta tu horario en "Mis Clases"</div>
           </div>
         ) : (
           <div className="space-y-4">

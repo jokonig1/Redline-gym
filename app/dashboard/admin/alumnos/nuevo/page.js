@@ -235,7 +235,7 @@ export default function NuevoAlumno() {
             </button>
           </div>
           <p className="text-[11px] text-zinc-600 mb-4">
-            Los días se pre-completan según el plan elegido. Podés cambiar el día y la hora de cada uno.
+            Los días se pre-completan según el plan elegido. Puedes cambiar el día y la hora de cada uno.
           </p>
 
           <div className="space-y-3">
@@ -342,7 +342,7 @@ export default function NuevoAlumno() {
               ))}
             </div>
             <p className="text-xs text-zinc-600 text-center mb-5">
-              Podés agregar el alumno igual, pero el bloque superará el límite recomendado.
+              Puedes agregar el alumno igual, pero el bloque superará el límite recomendado.
             </p>
             <div className="flex gap-2">
               <button

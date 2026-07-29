@@ -194,7 +194,7 @@ export default function HorariosCalendar({
   }
 
   async function guardarMover() {
-    if (!moverForm.fecha_nueva || !moverForm.hora_nueva) { setErrorGuardar('Elegí la nueva fecha y hora.'); return }
+    if (!moverForm.fecha_nueva || !moverForm.hora_nueva) { setErrorGuardar('Elige la nueva fecha y hora.'); return }
     setGuardando(true); setErrorGuardar('')
     try { await onGuardar(modalSlot, moverForm); setModalSlot(null) }
     catch (err) { setErrorGuardar(err.message || 'Error al guardar.') }
@@ -246,10 +246,10 @@ export default function HorariosCalendar({
 
   async function guardarExtra(forzar = false) {
     setErrorExtra('')
-    if (tipoAlumno === 'existente' && !formExtra.alumno_id) { setErrorExtra('Seleccioná un alumno.'); return }
+    if (tipoAlumno === 'existente' && !formExtra.alumno_id) { setErrorExtra('Selecciona un alumno.'); return }
     if (tipoAlumno === 'nuevo' && !formExtra.nombre.trim()) { setErrorExtra('El nombre es obligatorio.'); return }
     const dia = diaFromFecha(formExtra.fecha)
-    if (!dia) { setErrorExtra('Elegí una fecha válida (no hay clases los domingos).'); return }
+    if (!dia) { setErrorExtra('Elige una fecha válida (no hay clases los domingos).'); return }
     if (!forzar) {
       const supabase = createClient()
       const { data } = await supabase.from('alumno_horarios').select('hora').eq('activo',true).eq('dia',dia)

@@ -100,7 +100,7 @@ export default function CoachRutinas() {
   }
 
   async function crearCategoriaInline() {
-    if (!nombreCategoriaInline.trim()) { setErrorCategoriaInline('Poné un nombre.'); return }
+    if (!nombreCategoriaInline.trim()) { setErrorCategoriaInline('Pon un nombre.'); return }
     setGuardandoCategoriaInline(true); setErrorCategoriaInline('')
 
     const res = await fetch('/api/rutinas-categorias', {
@@ -150,7 +150,7 @@ export default function CoachRutinas() {
     const ejerciciosValidos = modal.ejercicios
       .map((e, i) => ({ nombre: e.nombre.trim(), orden: i }))
       .filter(e => e.nombre)
-    if (ejerciciosValidos.length === 0) { setError('Agregá al menos un ejercicio.'); return }
+    if (ejerciciosValidos.length === 0) { setError('Agrega al menos un ejercicio.'); return }
 
     setSaving(true)
     setError('')
@@ -292,7 +292,7 @@ export default function CoachRutinas() {
     await Promise.all([fetchRutinas(), fetchCategorias()])
 
     if (resultados.some(r => !r.ok)) {
-      setErrorCat('La categoría se guardó, pero alguna rutina no se pudo asignar. Volvé a intentar.')
+      setErrorCat('La categoría se guardó, pero alguna rutina no se pudo asignar. Vuelve a intentar.')
       setGuardandoCat(false)
       return
     }
@@ -369,7 +369,7 @@ export default function CoachRutinas() {
           <EmptyIcon tipo="lista" className="w-10 h-10 mb-3 text-zinc-500" />
           <div className="text-foreground font-bold mb-1">Sin rutinas todavía</div>
           <div className="text-zinc-600 text-sm mb-4">
-            Creá plantillas de rutinas para usarlas cuando registres sesiones
+            Crea plantillas de rutinas para usarlas cuando registres sesiones
           </div>
           <button
             onClick={abrirNueva}
@@ -488,7 +488,7 @@ export default function CoachRutinas() {
                                     <div className="fixed inset-0 z-10" onClick={() => setPopoverRutinaId(null)} />
                                     <div className="absolute left-0 top-6 z-20 bg-surface border border-border-strong rounded-xl shadow-xl py-1.5 w-48 max-h-56 overflow-y-auto">
                                       {categorias.length === 0 ? (
-                                        <div className="px-3 py-2 text-xs text-zinc-600">Creá una categoría primero</div>
+                                        <div className="px-3 py-2 text-xs text-zinc-600">Crea una categoría primero</div>
                                       ) : categorias.map(catOpcion => (
                                         <label
                                           key={catOpcion.id}
@@ -602,7 +602,7 @@ export default function CoachRutinas() {
                 )}
 
                 {categorias.length === 0 ? (
-                  <p className="text-xs text-zinc-600 italic">Todavía no tenés categorías creadas.</p>
+                  <p className="text-xs text-zinc-600 italic">Todavía no tienes categorías creadas.</p>
                 ) : (
                   <div className="flex flex-wrap gap-1.5">
                     {categorias.map(c => (
@@ -722,7 +722,7 @@ export default function CoachRutinas() {
                   className="w-full bg-raised border border-border text-foreground rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-red-600 placeholder:text-zinc-600 mb-1.5"
                 />
                 {rutinas.length === 0 ? (
-                  <p className="text-xs text-zinc-600 italic">Todavía no tenés rutinas creadas.</p>
+                  <p className="text-xs text-zinc-600 italic">Todavía no tienes rutinas creadas.</p>
                 ) : (
                   <div className="max-h-52 overflow-y-auto rounded-lg border border-border divide-y divide-border">
                     {rutinasFiltradasModalCat.length === 0 ? (

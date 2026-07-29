@@ -19,7 +19,7 @@ export async function POST(req) {
 
   const esAdmin = profile.rol === 'admin'
   if (!esAdmin && alumno.coach_id !== user.id) {
-    return Response.json({ error: 'No podés editar este alumno' }, { status: 403 })
+    return Response.json({ error: 'No puedes editar este alumno' }, { status: 403 })
   }
 
   const { id, ...cambios } = body

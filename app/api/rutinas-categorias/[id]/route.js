@@ -21,7 +21,7 @@ export async function PUT(req, { params }) {
     .single()
 
   if (error) {
-    if (error.code === '23505') return Response.json({ error: 'Ya tenés una categoría con ese nombre.' }, { status: 400 })
+    if (error.code === '23505') return Response.json({ error: 'Ya tienes una categoría con ese nombre.' }, { status: 400 })
     return Response.json({ error: 'Error al renombrar la categoría' }, { status: 500 })
   }
   return Response.json(data)

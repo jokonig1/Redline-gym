@@ -143,7 +143,7 @@ export default function RutinaLogger({ alumnoId, coachId, alumnoHorarioId, fecha
       }
       const ejerciciosConNombre = ejerciciosResueltos.filter(e => e.nombre.trim())
       if (ejerciciosConNombre.length === 0) {
-        setErrorRutina('Agregá al menos un ejercicio.')
+        setErrorRutina('Agrega al menos un ejercicio.')
         setGuardandoRutina(false)
         return
       }

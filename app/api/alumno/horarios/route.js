@@ -52,7 +52,7 @@ export async function POST(req) {
 
   const esAdmin = profile.rol === 'admin'
   if (!esAdmin && alumno.coach_id !== user.id) {
-    return Response.json({ error: 'No podés editar el horario de este alumno' }, { status: 403 })
+    return Response.json({ error: 'No puedes editar el horario de este alumno' }, { status: 403 })
   }
 
   const { eliminar = [], nuevos = [], actualizar = [] } = body

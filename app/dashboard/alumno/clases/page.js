@@ -70,7 +70,7 @@ export default function MisClases() {
     <div className="bg-surface border border-border rounded-xl p-8 text-center max-w-md">
       <EmptyIcon tipo="advertencia" className="w-8 h-8 mb-3 text-zinc-500" />
       <div className="text-foreground font-bold mb-1">Perfil no encontrado</div>
-      <div className="text-zinc-500 text-sm">Contactá al administrador del gimnasio.</div>
+      <div className="text-zinc-500 text-sm">Contacta al administrador del gimnasio.</div>
     </div>
   )
 

@@ -492,7 +492,7 @@ export default function AlumnosList({
               <div className="bg-red-900/20 border border-red-900/40 rounded-lg px-3 py-2.5 mb-4">
                 <p className="text-xs text-red-400">{errorEliminar}</p>
                 <p className="text-[11px] text-red-700 mt-1">
-                  Revisá la consola del navegador para más detalles (F12 → Console).
+                  Revisa la consola del navegador para más detalles (F12 → Console).
                 </p>
               </div>
             )}
@@ -767,7 +767,7 @@ export default function AlumnosList({
               ))}
             </div>
             <p className="text-xs text-zinc-600 text-center mb-5">
-              Podés agregar el alumno igual, pero el bloque superará el límite recomendado.
+              Puedes agregar el alumno igual, pero el bloque superará el límite recomendado.
             </p>
             <div className="flex gap-2">
               <button

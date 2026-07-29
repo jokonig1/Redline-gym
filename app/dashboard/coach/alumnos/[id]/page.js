@@ -175,7 +175,7 @@ export default function DetalleAlumnoCoach() {
         ← Volver
       </button>
       <div className="text-zinc-500 text-center py-12">
-        No tenés acceso a este alumno — no es tuyo ni lo estás cubriendo por un traspaso vigente.
+        No tienes acceso a este alumno — no es tuyo ni lo estás cubriendo por un traspaso vigente.
       </div>
     </div>
   )

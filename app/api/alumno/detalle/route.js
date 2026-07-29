@@ -26,7 +26,7 @@ export async function GET(req) {
 
   const esAdmin = profile.rol === 'admin'
   if (!esAdmin && !(await coachTieneAccesoAlumno(user.id, alumno))) {
-    return Response.json({ error: 'No tenés acceso a este alumno' }, { status: 403 })
+    return Response.json({ error: 'No tienes acceso a este alumno' }, { status: 403 })
   }
 
   // Solo el horario fijo de inscripción: las clases extra/sobrecupo (fecha

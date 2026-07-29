@@ -63,7 +63,7 @@ export default function AlumnoPerfil() {
       <div className="text-foreground font-bold mb-1">Perfil no encontrado</div>
       <div className="text-zinc-500 text-sm">
         Tu cuenta no tiene un perfil de alumno asociado.<br />
-        Contactá al administrador del gimnasio.
+        Contacta al administrador del gimnasio.
       </div>
     </div>
   )
@@ -131,7 +131,7 @@ export default function AlumnoPerfil() {
               </div>
             ) : (
               <div className="text-sm text-zinc-500">
-                Sin fecha de vencimiento — consultá con el administrador
+                Sin fecha de vencimiento — consulta con el administrador
               </div>
             )}
           </div>
@@ -152,7 +152,7 @@ export default function AlumnoPerfil() {
             </div>
           </div>
         ) : (
-          <p className="text-sm text-zinc-500">Sin coach asignado. Contactá al administrador.</p>
+          <p className="text-sm text-zinc-500">Sin coach asignado. Contacta al administrador.</p>
         )}
       </div>
 
@@ -175,7 +175,7 @@ export default function AlumnoPerfil() {
           ))}
         </div>
         <p className="text-[11px] text-zinc-600 mt-4">
-          Para modificar tus datos, contactá al administrador del gimnasio.
+          Para modificar tus datos, contacta al administrador del gimnasio.
         </p>
       </div>
 
@@ -226,7 +226,7 @@ function CambiarContrasena({ email }) {
     setLoading(false)
 
     if (updateErr) {
-      setError('Error al cambiar la contraseña. Intentá de nuevo.')
+      setError('Error al cambiar la contraseña. Intenta de nuevo.')
     } else {
       setExito(true)
       setActual(''); setNueva(''); setConfirmar('')
@@ -293,7 +293,7 @@ function CambiarContrasena({ email }) {
               value={confirmar}
               onChange={e => setConfirmar(e.target.value)}
               required
-              placeholder="Repetí la nueva contraseña"
+              placeholder="Repite la nueva contraseña"
               className="w-full bg-raised border border-border text-foreground rounded-lg px-4 py-2.5 pr-11 text-sm focus:outline-none focus:border-red-600 transition-colors"
             />
             <button type="button" onClick={() => setVerConf(v => !v)}

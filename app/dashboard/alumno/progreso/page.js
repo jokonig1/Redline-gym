@@ -33,7 +33,7 @@ function getWeekOfMonth(f) { return Math.ceil(parseInt(f.split('-')[2]) / 7) }
 function GraficoPeso({ datos }) {
   if (datos.length < 2) return (
     <div className="text-center py-8 text-zinc-600 text-xs">
-      Registrá al menos 2 pesos para ver el gráfico
+      Registra al menos 2 pesos para ver el gráfico
     </div>
   )
 
@@ -244,7 +244,7 @@ function SeccionPeso({ alumnoId }) {
 
   async function guardar(e) {
     e.preventDefault()
-    if (!peso || isNaN(parseFloat(peso))) { setError('Ingresá un peso válido'); return }
+    if (!peso || isNaN(parseFloat(peso))) { setError('Ingresa un peso válido'); return }
     setGuardando(true); setError('')
     const res = await fetch('/api/alumno/peso', {
       method: 'POST',
@@ -391,7 +391,7 @@ export default function AlumnoProgreso() {
     <div className="bg-surface border border-border rounded-xl p-8 text-center max-w-md">
       <EmptyIcon tipo="advertencia" className="w-8 h-8 mb-3 text-zinc-500" />
       <div className="text-foreground font-bold mb-1">Perfil no encontrado</div>
-      <div className="text-zinc-500 text-sm">Contactá al administrador del gimnasio.</div>
+      <div className="text-zinc-500 text-sm">Contacta al administrador del gimnasio.</div>
     </div>
   )
 

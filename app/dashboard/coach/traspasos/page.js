@@ -97,10 +97,10 @@ export default function CoachTraspasos() {
 
   async function crearTraspaso() {
     setErrorTemp('')
-    if (!coachDestino) { setErrorTemp('Elegí a qué coach traspasar.'); return }
+    if (!coachDestino) { setErrorTemp('Elige a qué coach traspasar.'); return }
     if (fechaHasta < fechaDesde) { setErrorTemp('La fecha hasta no puede ser antes que la fecha desde.'); return }
     if (modoTemp === 'elegir' && alumnosSelecTemp.size === 0) {
-      setErrorTemp('Elegí al menos un alumno, o cambiá a "Todos mis alumnos".'); return
+      setErrorTemp('Elige al menos un alumno, o cambia a "Todos mis alumnos".'); return
     }
 
     setGuardandoTemp(true)
@@ -142,8 +142,8 @@ export default function CoachTraspasos() {
   async function traspasarAlumnos() {
     setErrorPerm(''); setExitoPerm('')
     const ids = [...alumnosSelec]
-    if (ids.length === 0) { setErrorPerm('Elegí al menos un alumno.'); return }
-    if (!coachNuevo)      { setErrorPerm('Elegí a qué coach los traspasás.'); return }
+    if (ids.length === 0) { setErrorPerm('Elige al menos un alumno.'); return }
+    if (!coachNuevo)      { setErrorPerm('Elige a qué coach los traspasas.'); return }
 
     setGuardandoPerm(true)
     const res = await fetch('/api/traspasos/alumnos', {
@@ -168,7 +168,7 @@ export default function CoachTraspasos() {
       <div>
         <h1 className="text-2xl font-black text-foreground">Traspasos</h1>
         <p className="text-xs text-zinc-500 mt-1">
-          Traspasá tus clases a otro coach por unos días, o pasale un alumno para siempre.
+          Traspasa tus clases a otro coach por unos días, o pásale un alumno para siempre.
         </p>
       </div>
 
@@ -245,7 +245,7 @@ export default function CoachTraspasos() {
                 Alumnos {alumnosSelecTemp.size > 0 && `(${alumnosSelecTemp.size} elegido${alumnosSelecTemp.size !== 1 ? 's' : ''})`}
               </label>
               <p className="text-[11px] text-zinc-500 mb-1.5">
-                Repetí la operación con otro coach para repartir el resto de tus alumnos.
+                Repite la operación con otro coach para repartir el resto de tus alumnos.
               </p>
               <input
                 type="text"
@@ -255,7 +255,7 @@ export default function CoachTraspasos() {
                 className="w-full bg-raised border border-border text-foreground rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-red-600 placeholder:text-zinc-600 mb-1.5"
               />
               {alumnos.length === 0 ? (
-                <p className="text-xs text-zinc-600 italic">No tenés alumnos asignados.</p>
+                <p className="text-xs text-zinc-600 italic">No tienes alumnos asignados.</p>
               ) : (
                 <div className="max-h-52 overflow-y-auto rounded-lg border border-border divide-y divide-border">
                   {alumnosFiltradosTemp.length === 0 ? (
@@ -358,7 +358,7 @@ export default function CoachTraspasos() {
           </div>
         </div>
         <p className="text-xs text-zinc-500 mb-4">
-          Elegí uno o varios alumnos y a qué coach se los traspasás. Podés repetir la operación
+          Elige uno o varios alumnos y a qué coach se los traspasas. Puedes repetir la operación
           para mandar distintos alumnos a distintos coaches.
         </p>
 
@@ -381,7 +381,7 @@ export default function CoachTraspasos() {
               className="w-full bg-raised border border-border text-foreground rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-red-600 placeholder:text-zinc-600 mb-1.5"
             />
             {alumnos.length === 0 ? (
-              <p className="text-xs text-zinc-600 italic">No tenés alumnos asignados.</p>
+              <p className="text-xs text-zinc-600 italic">No tienes alumnos asignados.</p>
             ) : (
               <div className="max-h-52 overflow-y-auto rounded-lg border border-border divide-y divide-border">
                 {alumnosFiltrados.length === 0 ? (

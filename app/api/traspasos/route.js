@@ -37,7 +37,7 @@ export async function POST(req) {
   if (validationError) return validationError
 
   if (body.coach_origen_id === body.coach_destino_id) {
-    return Response.json({ error: 'Elegí un coach distinto para traspasar.' }, { status: 400 })
+    return Response.json({ error: 'Elige un coach distinto para traspasar.' }, { status: 400 })
   }
   if (body.fecha_hasta < body.fecha_desde) {
     return Response.json({ error: 'La fecha hasta no puede ser anterior a la fecha desde.' }, { status: 400 })

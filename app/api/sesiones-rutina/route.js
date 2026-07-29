@@ -19,7 +19,7 @@ export async function GET(req) {
   if (profile?.rol === 'coach') {
     const { data: alumno } = await supabaseAdmin.from('alumnos').select('id, coach_id').eq('id', alumnoId).single()
     if (!alumno || !(await coachTieneAccesoAlumno(user.id, alumno))) {
-      return Response.json({ error: 'No tenés acceso a este alumno' }, { status: 403 })
+      return Response.json({ error: 'No tienes acceso a este alumno' }, { status: 403 })
     }
   }
 
