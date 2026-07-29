@@ -1,7 +1,7 @@
 'use client'
 import Link from 'next/link'
 
-const CONTACTO_EMAIL = 'contacto@redlinegym.cl'
+const CONTACTO_EMAIL = 'redlinegymcdlv@gmail.com'
 const GIMNASIO_NOMBRE = 'RedLine Gimnasio Integral'
 const GIMNASIO_DIRECCION = 'Av. Transversal Uno #845, Ciudad de los Valles, Pudahuel'
 const VIGENCIA_LEY = '1 de diciembre de 2026'
