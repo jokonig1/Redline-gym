@@ -626,7 +626,7 @@ export default function HorariosCalendar({
                   onClick={irAMover}
                   className="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl hover:bg-hover-md transition-colors text-left"
                 >
-                  <span className="text-lg">↗</span>
+                  <span className="text-lg">→</span>
                   <div>
                     <div className="text-sm font-semibold text-foreground">
                       {slotAccion.excepcion ? 'Editar cambio' : 'Mover clase'}

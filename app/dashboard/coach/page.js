@@ -145,7 +145,7 @@ export default function CoachInicio() {
                         <div className="text-xs text-zinc-500 mt-0.5">
                           {slot.tipo === 'semipersonalizado' ? 'Semi Personalizado' : 'Personalizado'}
                           {slot.tipo_slot === 'movida' && (
-                            <span className="ml-1.5 text-amber-500">↗ movida</span>
+                            <span className="ml-1.5 text-amber-500">→ movida</span>
                           )}
                           {slot.fecha && (
                             <span className="ml-1.5 text-red-400">· Extra</span>

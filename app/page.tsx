@@ -29,7 +29,7 @@ const TESTIMONIOS = [
   },
   {
     imagen:   '/exp5.jpeg',
-    texto:    'El ambiente es increíble. Acá lo conocen, lo guían y celebran sus logros. No se siente como un gimnasio más, sino como una comunidad real.',
+    texto:    'El ambiente es increíble. Acá te conocen, te guían y celebran tus logros. No se siente como un gimnasio más, sino como una comunidad real.',
     nombre:   'Fernanda K.',
     servicio: 'Plan Semi Personalizado · 2x/sem',
   },
@@ -210,17 +210,17 @@ export default function LandingPage() {
           </h1>
 
           <p className={`${poppins.className} text-lg sm:text-xl text-white max-w-xl mx-auto mb-10 leading-relaxed`}>
-            Entrenamiento personalizado, seguimiento continuo y apoyo profesional para que avance con seguridad hacia sus objetivos.
+            Entrenamiento personalizado, seguimiento continuo y apoyo profesional para que avances con seguridad hacia tus objetivos.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <a href="#planes"
               className={`${poppins.className} bg-red-600 hover:bg-red-700 text-white uppercase tracking-wide font-bold px-7 py-3.5 rounded-xl transition-colors text-sm`}>
-              Conozca nuestros planes →
+              Conoce nuestros planes →
             </a>
             <a href={waLink} target="_blank" rel="noopener noreferrer"
               className={`${poppins.className} border border-border-strong text-foreground hover:bg-hover-md uppercase tracking-wide font-bold px-7 py-3.5 rounded-xl transition-colors text-sm`}>
-              Agende su clase de prueba
+              Agenda tu clase de prueba
             </a>
           </div>
         </div>
@@ -233,7 +233,7 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
             <div>
-              <div className="text-[10px] font-bold uppercase tracking-[3px] text-red-600 mb-4">Sobre nosotros</div>
+              <div className={`${poppins.className} text-sm sm:text-base font-bold uppercase tracking-[3px] text-red-600 mb-4`}>Sobre nosotros</div>
               <h2 className={`${poppins.className} text-3xl sm:text-4xl font-extrabold uppercase tracking-wide text-foreground mb-6 leading-tight`}>
                 El progreso no es casualidad.
               </h2>
@@ -242,13 +242,13 @@ export default function LandingPage() {
                   Redline nació con la idea de crear un gimnasio donde cualquier persona pueda sentirse cómoda entrenando, sin importar su nivel de experiencia. Aquí valoramos el esfuerzo diario, el compañerismo y el progreso de cada alumno.
                 </p>
                 <p>
-                  Nuestro objetivo es ayudarlo a construir hábitos saludables, superar sus propios límites y disfrutar del proceso. Porque en Redline cada entrenamiento cuenta y cada avance importa.
+                  Nuestro objetivo es ayudarte a construir hábitos saludables, superar tus propios límites y disfrutar del proceso. Porque en Redline cada entrenamiento cuenta y cada avance importa.
                 </p>
               </div>
               <div className="text-center mt-8">
                 <a href={waLink} target="_blank" rel="noopener noreferrer"
                   className={`${poppins.className} inline-flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white uppercase tracking-wide font-bold text-base px-7 py-3.5 rounded-xl transition-colors`}>
-                  Agende su primera clase gratuita →
+                  Agenda tu primera clase gratuita →
                 </a>
               </div>
             </div>
@@ -274,7 +274,7 @@ export default function LandingPage() {
       <section id="servicios" className="py-28 px-4 bg-red-600">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-14">
-            <div className="text-[10px] font-bold uppercase tracking-[3px] text-red-100 mb-4">Servicios</div>
+            <div className={`${poppins.className} text-sm sm:text-base font-bold uppercase tracking-[3px] text-red-100 mb-4`}>Servicios</div>
             <h2 className={`${poppins.className} text-3xl sm:text-4xl font-extrabold uppercase tracking-wide text-white`}>Un enfoque integral</h2>
           </div>
 
@@ -286,7 +286,7 @@ export default function LandingPage() {
                 <Image src="/icono_musculacion.png" alt="Musculación" width={40} height={40} className="w-full h-full object-contain" />
               </div>
               <h3 className={`${poppins.className} text-lg font-bold text-white mb-3`}>Musculación</h3>
-              <p className="text-sm text-red-50 leading-relaxed">Entrenamiento de fuerza para mejorar su composición corporal, ganar masa muscular y reducir grasa. Planificación progresiva para todos los niveles.</p>
+              <p className="text-sm text-red-50 leading-relaxed">Entrenamiento de fuerza para mejorar tu composición corporal, ganar masa muscular y reducir grasa. Planificación progresiva para todos los niveles.</p>
             </div>
 
             {/* Reintegro Deportivo */}
@@ -295,7 +295,7 @@ export default function LandingPage() {
                 <Image src="/icono_reintegro_deportivo.png" alt="Reintegro Deportivo" width={40} height={40} className="w-full h-full object-contain" />
               </div>
               <h3 className={`${poppins.className} text-lg font-bold text-white mb-3`}>Reintegro Deportivo</h3>
-              <p className="text-sm text-red-50 leading-relaxed">¿Vuelve de una lesión? Lo guiamos paso a paso para retomar el movimiento de forma segura y sin recaídas. Protocolos adaptados a su proceso y sus tiempos.</p>
+              <p className="text-sm text-red-50 leading-relaxed">¿Vuelves de una lesión? Te guiamos paso a paso para retomar el movimiento de forma segura y sin recaídas. Protocolos adaptados a tu proceso y tus tiempos.</p>
             </div>
 
             {/* Kinesiología */}
@@ -304,7 +304,7 @@ export default function LandingPage() {
                 <Image src="/icono_kinesiologia.png" alt="Kinesiología" width={40} height={40} className="w-full h-full object-contain" />
               </div>
               <h3 className={`${poppins.className} text-lg font-bold text-white mb-3`}>Kinesiología</h3>
-              <p className="text-sm text-red-50 leading-relaxed">Apoyo profesional para recuperación, prevención y mejora del movimiento. Nuestro kinesiólogo trabaja integrado al entrenamiento para que su proceso sea completo.</p>
+              <p className="text-sm text-red-50 leading-relaxed">Apoyo profesional para recuperación, prevención y mejora del movimiento. Nuestro kinesiólogo trabaja integrado al entrenamiento para que tu proceso sea completo.</p>
             </div>
 
           </div>
@@ -315,7 +315,7 @@ export default function LandingPage() {
       <section id="planes" className="py-28 px-4">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-14">
-            <div className="text-[10px] font-bold uppercase tracking-[3px] text-red-600 mb-4">Planes y precios</div>
+            <div className={`${poppins.className} text-sm sm:text-base font-bold uppercase tracking-[3px] text-red-600 mb-4`}>Planes y precios</div>
             <h2 className={`${poppins.className} text-3xl sm:text-4xl font-extrabold uppercase tracking-wide text-foreground`}>Elige el que se adapta a ti</h2>
           </div>
 
@@ -328,7 +328,7 @@ export default function LandingPage() {
                 <div className="inline-block text-[10px] font-bold uppercase tracking-widest text-white bg-black/20 px-3 py-1 rounded-full mb-3">Más popular</div>
                 <h3 className={`${poppins.className} text-xl font-bold mb-1`}>Plan Personalizado</h3>
                 <p className="text-red-100 text-sm mb-6">
-                  Sesiones individuales de una hora. Trabaja solo con su profesor, con dedicación exclusiva.
+                  Sesiones individuales de una hora. Trabajas solo con tu profesor, con dedicación exclusiva.
                 </p>
                 <div className="space-y-3 mb-6">
                   {[
@@ -375,11 +375,11 @@ export default function LandingPage() {
             </div>
           </div>
 
-          <p className="text-center text-sm text-zinc-500 mt-6">
+          <p className={`${poppins.className} text-center text-base sm:text-lg text-zinc-300 mt-8 font-medium`}>
             ¿No sabes cuál elegir?{' '}
             <a href={waLink} target="_blank" rel="noopener noreferrer"
-              className="text-red-500 font-medium hover:text-red-400 transition-colors">
-              Escríbanos y lo ayudamos →
+              className="text-red-500 font-bold hover:text-red-400 transition-colors underline underline-offset-4">
+              Escríbenos y te ayudamos →
             </a>
           </p>
         </div>
@@ -389,7 +389,7 @@ export default function LandingPage() {
       <section className="py-28 px-4 bg-surface">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-12">
-            <div className="text-[10px] font-bold uppercase tracking-[3px] text-red-600 mb-4">Experiencias</div>
+            <div className={`${poppins.className} text-sm sm:text-base font-bold uppercase tracking-[3px] text-red-600 mb-4`}>Experiencias</div>
             <h2 className={`${poppins.className} text-3xl sm:text-4xl font-extrabold uppercase tracking-wide text-foreground`}>Lo que dicen nuestros alumnos</h2>
           </div>
           <Carrusel />
@@ -399,14 +399,14 @@ export default function LandingPage() {
       {/* ── HORARIOS ── */}
       <section id="horarios" className="py-28 px-4">
         <div className="max-w-2xl mx-auto text-center">
-          <div className="text-[10px] font-bold uppercase tracking-[3px] text-red-600 mb-4">Horarios</div>
+          <div className={`${poppins.className} text-sm sm:text-base font-bold uppercase tracking-[3px] text-red-600 mb-4`}>Horarios</div>
           <h2 className={`${poppins.className} text-3xl sm:text-5xl font-extrabold uppercase tracking-wide text-foreground leading-tight mb-6`}>
             Ven con nosotros<br />
-            <span className="text-red-600">y consulte su horario ideal</span>
+            <span className="text-red-600">y consulta tu horario ideal</span>
           </h2>
           <p className={`${poppins.className} text-zinc-300 text-sm sm:text-base max-w-lg mx-auto mb-10 leading-relaxed`}>
-            Abrimos de lunes a sábado y armamos con usted el horario que mejor se acomode a su rutina.
-            Escríbanos por WhatsApp y le confirmamos disponibilidad enseguida.
+            Abrimos de lunes a sábado y armamos contigo el horario que mejor se acomode a tu rutina.
+            Escríbenos por WhatsApp y te confirmamos disponibilidad enseguida.
           </p>
           <a href={waLink} target="_blank" rel="noopener noreferrer"
             className={`${poppins.className} inline-flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white uppercase tracking-wide font-bold px-8 py-4 rounded-xl transition-colors text-sm sm:text-base`}>
@@ -418,12 +418,12 @@ export default function LandingPage() {
       {/* ── CONTACTO ── */}
       <section id="contacto" className="py-28 px-4 bg-surface">
         <div className="max-w-4xl mx-auto text-center">
-          <div className="text-[10px] font-bold uppercase tracking-[3px] text-red-600 mb-4">Contacto</div>
+          <div className={`${poppins.className} text-sm sm:text-base font-bold uppercase tracking-[3px] text-red-600 mb-4`}>Contacto</div>
           <h2 className={`${poppins.className} text-3xl sm:text-4xl font-extrabold uppercase tracking-wide text-foreground mb-4`}>
             ¿Listo para empezar?
           </h2>
           <p className={`${poppins.className} text-zinc-300 text-sm mb-12 max-w-md mx-auto`}>
-            Venga por su clase de prueba totalmente gratis y conozca RedLine en persona.
+            Ven por tu clase de prueba totalmente gratis y conoce RedLine en persona.
           </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10">
@@ -471,7 +471,7 @@ export default function LandingPage() {
 
           <a href={waLink} target="_blank" rel="noopener noreferrer"
             className={`${poppins.className} inline-flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white uppercase tracking-wide font-bold px-8 py-4 rounded-xl transition-colors text-sm`}>
-            Agende su clase de prueba gratis →
+            Agenda tu clase de prueba gratis →
           </a>
         </div>
       </section>
