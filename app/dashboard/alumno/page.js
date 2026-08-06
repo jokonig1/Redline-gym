@@ -55,7 +55,6 @@ export default function AlumnoInicio() {
     </div>
   )
 
-  const vecesPorSemana   = horarios.filter(h => !h.fecha).length
   const esPersonalizado  = (alumno.tipo_clase || '').toLowerCase() === 'personalizado'
 
   // Clases de hoy (horario fijo del día + excepciones aplicadas)
@@ -112,7 +111,7 @@ export default function AlumnoInicio() {
           </div>
           <div>
             <div className="text-[10px] text-zinc-500 uppercase tracking-wider mb-0.5">Veces por semana</div>
-            <div className="text-sm font-bold text-foreground">{vecesPorSemana}x/sem</div>
+            <div className="text-sm font-bold text-foreground">{alumno.plan || '—'}</div>
           </div>
           <div>
             <div className="text-[10px] text-zinc-500 uppercase tracking-wider mb-0.5">Miembro desde</div>
