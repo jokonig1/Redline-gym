@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { useTheme } from '@/app/providers'
 
@@ -38,7 +39,14 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+    <div className="min-h-screen bg-background flex items-center justify-center p-4 relative">
+      <Link
+        href="/"
+        className="absolute top-6 left-6 text-sm text-zinc-500 hover:text-foreground transition-colors flex items-center gap-1.5"
+      >
+        ← Volver al inicio
+      </Link>
+
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center flex justify-center">
           {/* eslint-disable-next-line @next/next/no-img-element */}

@@ -118,7 +118,27 @@ export default function LandingPage() {
 
       {/* ── Navbar ── */}
       <nav className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
+        {/* Barra móvil: hamburguesa | logo centrado | ingresar */}
+        <div className="lg:hidden grid grid-cols-3 items-center h-16 px-4 sm:px-6">
+          <button onClick={() => setMenuOpen(v => !v)}
+            className="justify-self-start w-9 h-9 flex items-center justify-center rounded-lg hover:bg-hover-md transition-colors text-foreground"
+            aria-label="Menú">
+            {menuOpen ? '✕' : '☰'}
+          </button>
+
+          <a href="#inicio" className="justify-self-center">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo_oscuro.png" alt="RedLine" className="h-8 w-auto object-contain" />
+          </a>
+
+          <Link href="/login"
+            className={`${poppins.className} justify-self-end bg-red-600 hover:bg-red-700 text-white text-xs uppercase tracking-wide font-bold px-4 py-2.5 rounded-lg transition-colors`}>
+            Ingresar
+          </Link>
+        </div>
+
+        {/* Barra desktop */}
+        <div className="hidden lg:flex max-w-6xl mx-auto px-4 sm:px-6 h-16 items-center justify-between gap-4">
 
           {/* Logo — siempre oscuro en la landing */}
           <a href="#inicio" className="shrink-0">
@@ -127,7 +147,7 @@ export default function LandingPage() {
           </a>
 
           {/* Links desktop */}
-          <div className="hidden md:flex items-center gap-7">
+          <div className="flex items-center gap-7">
             {[
               { label: 'Nosotros',  href: '#nosotros'  },
               { label: 'Servicios', href: '#servicios' },
@@ -144,24 +164,19 @@ export default function LandingPage() {
 
           <div className="flex items-center gap-2 shrink-0">
             <a href={waLink} target="_blank" rel="noopener noreferrer"
-              className={`${poppins.className} hidden sm:flex items-center gap-2 border border-border text-foreground hover:bg-hover-md text-xs uppercase tracking-wide font-bold px-4 py-2.5 rounded-lg transition-colors`}>
+              className={`${poppins.className} flex items-center gap-2 border border-border text-foreground hover:bg-hover-md text-xs uppercase tracking-wide font-bold px-4 py-2.5 rounded-lg transition-colors`}>
               Clase de prueba gratis
             </a>
             <Link href="/login"
               className={`${poppins.className} bg-red-600 hover:bg-red-700 text-white text-xs uppercase tracking-wide font-bold px-4 py-2.5 rounded-lg transition-colors`}>
               Ingresar
             </Link>
-            <button onClick={() => setMenuOpen(v => !v)}
-              className="md:hidden w-9 h-9 flex items-center justify-center rounded-lg hover:bg-hover-md transition-colors text-foreground"
-              aria-label="Menú">
-              {menuOpen ? '✕' : '☰'}
-            </button>
           </div>
         </div>
 
         {/* Menú móvil */}
         {menuOpen && (
-          <div className="md:hidden border-t border-border bg-surface px-4 py-3 space-y-1">
+          <div className="lg:hidden border-t border-border bg-surface px-4 py-3 space-y-1">
             {[
               { label: 'Nosotros',  href: '#nosotros'  },
               { label: 'Servicios', href: '#servicios' },
