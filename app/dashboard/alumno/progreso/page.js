@@ -324,8 +324,8 @@ function SeccionPeso({ alumnoId }) {
             <DateInput
               value={fecha}
               onChange={e => setFecha(e.target.value)}
-              wrapperClassName="relative flex-1 min-w-0"
-              className="w-full min-w-0 bg-raised border border-border text-foreground rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-600 transition-colors"
+              wrapperClassName="relative w-[150px] shrink-0"
+              className="w-[150px] bg-raised border border-border text-foreground rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-600 transition-colors"
             />
           </div>
         </div>
