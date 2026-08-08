@@ -306,11 +306,11 @@ function SeccionPeso({ alumnoId }) {
 
       {/* Form agregar peso */}
       <form onSubmit={guardar} className="flex flex-col sm:flex-row gap-2 sm:items-end">
-        <div className="flex-1">
+        <div className="flex-1 min-w-0">
           <label className="text-[10px] text-zinc-500 uppercase tracking-wider block mb-1">
             Registrar peso
           </label>
-          <div className="flex gap-2">
+          <div className="flex gap-2 min-w-0">
             <input
               type="number"
               step="0.1"
@@ -319,13 +319,13 @@ function SeccionPeso({ alumnoId }) {
               value={peso}
               onChange={e => setPeso(e.target.value)}
               placeholder="kg"
-              className="w-20 sm:w-24 bg-raised border border-border text-foreground rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-600 transition-colors"
+              className="w-20 sm:w-24 shrink-0 bg-raised border border-border text-foreground rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-600 transition-colors"
             />
             <DateInput
               value={fecha}
               onChange={e => setFecha(e.target.value)}
-              wrapperClassName="relative flex-1"
-              className="w-full bg-raised border border-border text-foreground rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-600 transition-colors"
+              wrapperClassName="relative flex-1 min-w-0"
+              className="w-full min-w-0 bg-raised border border-border text-foreground rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-600 transition-colors"
             />
           </div>
         </div>
