@@ -14,25 +14,16 @@ const WHATSAPP = '+56936254575'
 const INSTAGRAM = 'redlinehf'    // ← sin @
 const DIRECCION = 'Av. Transversal Uno #845, Ciudad de los Valles, Pudahuel'
 
-const TESTIMONIOS = [
-  {
-    imagen:   '/exp3.jpeg',
-    texto:    'Llegué sin nunca haber entrenado y en 4 meses transformé mi cuerpo y mi energía. El seguimiento de mi profe marcó toda la diferencia.',
-    nombre:   'Valentina R.',
-    servicio: 'Plan Personalizado · 3x/sem',
-  },
-  {
-    imagen:   '/exp4.jpeg',
-    texto:    'Venía de una rotura de ligamentos. El equipo de RedLine me ayudó a volver a entrenar sin miedo y con un plan real de progresión.',
-    nombre:   'Ignacio M.',
-    servicio: 'Reintegro Deportivo',
-  },
-  {
-    imagen:   '/exp5.jpeg',
-    texto:    'El ambiente es increíble. Acá te conocen, te guían y celebran tus logros. No se siente como un gimnasio más, sino como una comunidad real.',
-    nombre:   'Fernanda K.',
-    servicio: 'Plan Semi Personalizado · 2x/sem',
-  },
+type Testimonio = { imagen: string, posicion?: string }
+
+const TESTIMONIOS: Testimonio[] = [
+  { imagen: '/foto1.jpeg' },
+  { imagen: '/foto2.jpeg' },
+  { imagen: '/foto3.jpeg' },
+  { imagen: '/foto4.jpeg', posicion: 'center 15%' },
+  { imagen: '/foto5.jpeg' },
+  { imagen: '/foto6.jpeg' },
+  { imagen: '/foto7.jpeg' },
 ]
 
 // ── Componente carrusel de testimonios con imagen de fondo ────────────────────
@@ -49,39 +40,27 @@ function Carrusel() {
   }
 
   useEffect(() => {
+    if (TESTIMONIOS.length === 0) return
     timer.current = setInterval(siguiente, 6000)
     return () => { if (timer.current) clearInterval(timer.current) }
   }, [])
+
+  if (TESTIMONIOS.length === 0) return null
 
   const t = TESTIMONIOS[idx]
 
   return (
     <div className="relative max-w-3xl mx-auto">
 
-      {/* Card con imagen de fondo */}
-      <div className="relative rounded-2xl overflow-hidden">
-        {/* Imagen completa sin recorte */}
+      {/* Card con imagen de fondo — mismo tamaño (3:2) que tenía antes */}
+      <div className="relative rounded-2xl overflow-hidden aspect-[3/2] bg-black">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={t.imagen}
-          alt=""
-          className="w-full h-auto block"
-          aria-hidden="true"
+          alt="Alumno entrenando en RedLine"
+          className="absolute inset-0 w-full h-full object-cover"
+          style={{ objectPosition: t.posicion || 'center' }}
         />
-
-        {/* Overlay gradiente */}
-        <div className="absolute inset-0 bg-linear-to-t from-black/90 via-black/30 to-transparent" />
-
-        {/* Texto superpuesto */}
-        <div className="absolute inset-x-0 bottom-0 p-6 sm:p-8">
-          <p className="text-white text-sm sm:text-base leading-relaxed italic mb-4 drop-shadow">
-            &ldquo;{t.texto}&rdquo;
-          </p>
-          <div>
-            <div className="text-white font-bold text-sm">{t.nombre}</div>
-            <div className="text-red-400 text-[11px] font-medium mt-0.5">{t.servicio}</div>
-          </div>
-        </div>
       </div>
 
       {/* Controles */}
@@ -401,15 +380,17 @@ export default function LandingPage() {
       </section>
 
       {/* ── EXPERIENCIAS ── */}
-      <section className="py-28 px-4 bg-surface">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-12">
-            <div className={`${poppins.className} text-sm sm:text-base font-bold uppercase tracking-[3px] text-red-600 mb-4`}>Experiencias</div>
-            <h2 className={`${poppins.className} text-3xl sm:text-4xl font-extrabold uppercase tracking-wide text-foreground`}>Lo que dicen nuestros alumnos</h2>
+      {TESTIMONIOS.length > 0 && (
+        <section className="py-28 px-4 bg-surface">
+          <div className="max-w-6xl mx-auto">
+            <div className="text-center mb-12">
+              <div className={`${poppins.className} text-sm sm:text-base font-bold uppercase tracking-[3px] text-red-600 mb-4`}>Experiencias</div>
+              <h2 className={`${poppins.className} text-3xl sm:text-4xl font-extrabold uppercase tracking-wide text-foreground`}>Momentos RedLine</h2>
+            </div>
+            <Carrusel />
           </div>
-          <Carrusel />
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* ── HORARIOS ── */}
       <section id="horarios" className="py-28 px-4">
