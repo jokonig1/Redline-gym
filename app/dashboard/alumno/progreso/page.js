@@ -305,7 +305,7 @@ function SeccionPeso({ alumnoId }) {
       )}
 
       {/* Form agregar peso */}
-      <form onSubmit={guardar} className="flex gap-2 items-end">
+      <form onSubmit={guardar} className="flex flex-col sm:flex-row gap-2 sm:items-end">
         <div className="flex-1">
           <label className="text-[10px] text-zinc-500 uppercase tracking-wider block mb-1">
             Registrar peso
@@ -319,7 +319,7 @@ function SeccionPeso({ alumnoId }) {
               value={peso}
               onChange={e => setPeso(e.target.value)}
               placeholder="kg"
-              className="w-24 bg-raised border border-border text-foreground rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-600 transition-colors"
+              className="w-20 sm:w-24 bg-raised border border-border text-foreground rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-600 transition-colors"
             />
             <DateInput
               value={fecha}
@@ -332,7 +332,7 @@ function SeccionPeso({ alumnoId }) {
         <button
           type="submit"
           disabled={guardando}
-          className="bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white text-sm font-bold px-4 py-2 rounded-lg transition-colors shrink-0"
+          className="bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white text-sm font-bold px-4 py-2 rounded-lg transition-colors shrink-0 w-full sm:w-auto"
         >
           {guardando ? '…' : 'Agregar'}
         </button>
